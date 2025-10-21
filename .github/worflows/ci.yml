@@ -1,4 +1,4 @@
-# ci.yml
+# .github/workflows/ci.yml
 name: CI
 
 on:
@@ -12,24 +12,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Клонируем репозиторий
       - uses: actions/checkout@v4
 
+      # 2. Читаем нужную версию Python из .python-version
       - name: Read Python version from .python-version
         id: python_version
         run: echo "version=$(cat .python-version)" >> $GITHUB_OUTPUT
 
+      # 3. Устанавливаем Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ steps.python_version.outputs.version }}
 
+      # 4. Устанавливаем uv (современный заменитель pip + venv)
       - name: Install uv
         run: pip install uv
 
+      # 5. Синхронизируем окружение и явно создаём .venv
       - name: Sync environment from uv.lock
-        run: uv sync --dev
+        run: uv sync --dev --python $(which python) --venv .venv
 
+      # 6. Добавляем .venv/bin в PATH, чтобы make находил ruff/mypy
+      - name: Add .venv/bin to PATH
+        run: echo "$PWD/.venv/bin" >> $GITHUB_PATH
+
+      # 7. Запускаем линтеры
       - name: Run lints
-        run: |
-          source .venv/bin/activate
-          make lint
+        run: make lint
