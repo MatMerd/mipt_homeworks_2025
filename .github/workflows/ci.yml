@@ -31,7 +31,7 @@ jobs:
 
       # 5. Синхронизируем окружение и явно создаём .venv
       - name: Sync environment from uv.lock
-        run: uv sync --dev --python $(which python) --venv .venv
+        run: uv sync --dev
 
       # 6. Добавляем .venv/bin в PATH, чтобы make находил ruff/mypy
       - name: Add .venv/bin to PATH
