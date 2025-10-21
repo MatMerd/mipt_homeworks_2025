@@ -30,4 +30,4 @@ jobs:
         run: uv sync --dev
 
       - name: Run lints
-        run: uv make lint
+        run: uv run make lint
