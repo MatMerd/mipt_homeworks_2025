@@ -11,4 +11,4 @@ repositories = Reader.read_file()
 print([repository.name for repository in repositories[:10]])
 
 # Создаем экземпляр запроса с несколькими полями для сортировки и полем для группировки
-request = Request([SortType.NAME, SortType.SIZE], [GroupType.LICENSE])
+request = Request({SortType.NAME, SortType.SIZE}, {GroupType.LICENSE})
