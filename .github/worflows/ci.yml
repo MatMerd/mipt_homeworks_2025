@@ -28,6 +28,9 @@ jobs:
 
       - name: Sync environment from uv.lock
         run: uv sync --dev
+      
+      - name: Activate uv venv
+        run: source .venv/bin/activate
 
       - name: Run lints
         run: uv run make lint
