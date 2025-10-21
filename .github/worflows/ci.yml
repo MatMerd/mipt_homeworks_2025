@@ -29,8 +29,5 @@ jobs:
       - name: Sync environment from uv.lock
         run: uv sync --dev
 
-      - name: Install lint dependencies
-        run: uv pip install ruff mypy flakeheaven
-
       - name: Run lints
-        run: make lint
+        run: uv make lint
