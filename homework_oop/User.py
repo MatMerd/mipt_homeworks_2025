@@ -1,13 +1,10 @@
-import typing
-
 from DataProcessor import DataProcessor, CsvTable, ProcessingResult
+from dataclasses import dataclass, field
 
 
+@dataclass
 class User:
-    _processors: dict[str, DataProcessor]
-
-    def __init__(self):
-        self._processors = {}
+    _processors: dict[str, DataProcessor] = field(default_factory=dict)
 
     def add_processor(self, name: str, processor: DataProcessor) -> None:
         self._processors[name] = processor.copy()
