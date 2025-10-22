@@ -1,5 +1,8 @@
 import typing
 
+CsvRow: typing.TypeAlias = dict[str, object]
+CsvTable: typing.TypeAlias = list[CsvRow]
+
 
 class DataProcessor:
     _filters: list[tuple[str, object]]
@@ -15,14 +18,14 @@ class DataProcessor:
         self._filters.append((field, value))
         return self
 
-    def _matches_filters(self, item: dict[str, object]) -> bool:
-        return all(item[field] == value for field, value in self._filters)
+    def _matches_filters(self, row: CsvRow) -> bool:
+        return all(row[field] == value for field, value in self._filters)
 
     def sort(self, by_field: str, reverse: bool = False) -> typing.Self:
         self._sort_by.append((by_field, reverse))
         return self
 
-    def _sort_data(self, data: list[dict[str, object]]) -> list[dict[str, object]]:
+    def _sort_data(self, data: CsvTable) -> CsvTable:
         result = data.copy()
         for key, reverse in reversed(self._sort_by):
             result.sort(key=lambda item: item[key], reverse=reverse)
@@ -32,14 +35,13 @@ class DataProcessor:
         self._group_by.append(by_field)
         return self
 
-    def _group_key(self, item: dict[str, object]) -> object | tuple[object]:
+    def _group_key(self, item: CsvRow) -> object:
         if len(self._group_by) > 1:
             return tuple(item[key] for key in self._group_by)
         else:
             return item[self._group_by[0]]
 
-    def _group_data(self, data: list[dict[str, object]]) -> dict[object, list[dict[str, object]]] | dict[
-            tuple, list[dict[str, object]]]:
+    def _group_data(self, data: CsvTable) -> dict[object, CsvTable]:
         result = {}
         for item in data:
             key = self._group_key(item)
@@ -47,8 +49,7 @@ class DataProcessor:
             result[key].append(item)
         return result
 
-    def process(self, data: list[dict[str, object]]) -> list[dict[str, object]] | dict[
-            object, list[dict[str, object]]] | dict[tuple, list[dict[str, object]]]:
+    def process(self, data: list[dict[str, object]]) -> CsvTable | dict[object, CsvTable]:
         filtered_data = [item for item in data if self._matches_filters(item)]
         sorted_data = self._sort_data(filtered_data)
 
