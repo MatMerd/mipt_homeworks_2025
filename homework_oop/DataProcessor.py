@@ -1,5 +1,6 @@
 import typing
 from dataclasses import dataclass, field
+import functools
 
 CsvRow: typing.TypeAlias = dict[str, object]
 CsvTable: typing.TypeAlias = list[CsvRow]
@@ -20,12 +21,19 @@ class DataProcessor:
         result._group_by = self._group_by.copy()
         return result
 
+    @staticmethod
+    def _get_field(row: CsvRow, field_name: str) -> object:
+        if field_name in row:
+            return row[field_name]
+        else:
+            raise KeyError(f'Table does not contain field \'{field_name}\'')
+
     def filter(self, field_name: str, value: object) -> typing.Self:
         self._filters.append((field_name, value))
         return self
 
     def _matches_filters(self, row: CsvRow) -> bool:
-        return all(row[field_name] == value for field_name, value in self._filters)
+        return all(self._get_field(row, field_name) == value for field_name, value in self._filters)
 
     def sort(self, by_field: str, reverse: bool = False) -> typing.Self:
         self._sort_by.append((by_field, reverse))
@@ -34,18 +42,18 @@ class DataProcessor:
     def _sort_data(self, data: CsvTable) -> CsvTable:
         result = data.copy()
         for key, reverse in reversed(self._sort_by):
-            result.sort(key=lambda item: item[key], reverse=reverse)
+            result.sort(key=functools.partial(self._get_field, key), reverse=reverse)
         return result
 
     def group(self, by_field: str) -> typing.Self:
         self._group_by.append(by_field)
         return self
 
-    def _group_key(self, item: CsvRow) -> object:
+    def _group_key(self, row: CsvRow) -> object:
         if len(self._group_by) > 1:
-            return tuple(item[key] for key in self._group_by)
+            return tuple(self._get_field(row, key) for key in self._group_by)
         else:
-            return item[self._group_by[0]]
+            return self._get_field(row, self._group_by[0])
 
     def _group_data(self, data: CsvTable) -> dict[object, CsvTable]:
         result = {}
