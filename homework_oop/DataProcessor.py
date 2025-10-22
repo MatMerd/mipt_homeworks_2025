@@ -3,6 +3,7 @@ import typing
 CsvRow: typing.TypeAlias = dict[str, object]
 CsvTable: typing.TypeAlias = list[CsvRow]
 
+ProcessingResult: typing.TypeAlias = CsvTable | dict[object, CsvTable]
 
 class DataProcessor:
     _filters: list[tuple[str, object]]
@@ -13,6 +14,13 @@ class DataProcessor:
         self._filters = []
         self._sort_by = []
         self._group_by = []
+
+    def copy(self) -> typing.Self:
+        result = DataProcessor()
+        result._filters = result._filters.copy()
+        result._sort_by = result._sort_by.copy()
+        result._group_by = result._group_by.copy()
+        return result
 
     def filter(self, field: str, value: object) -> typing.Self:
         self._filters.append((field, value))
@@ -49,7 +57,7 @@ class DataProcessor:
             result[key].append(item)
         return result
 
-    def process(self, data: list[dict[str, object]]) -> CsvTable | dict[object, CsvTable]:
+    def process(self, data: list[dict[str, object]]) -> ProcessingResult:
         filtered_data = [item for item in data if self._matches_filters(item)]
         sorted_data = self._sort_data(filtered_data)
 
