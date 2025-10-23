@@ -1,18 +1,18 @@
-from homework_oop.reader import Reader
-from homework_oop.state import State
-from homework_oop.statistics import Statistics
+from homework_oop.csv_reader import CSVReader
+from homework_oop.data_handler import DataHandler
+from homework_oop.data_statistics import DataStatistics
 from homework_oop.user import User
 
 
 def main():
     try:
         print("=== Тестируем Reader ===")
-        reader = Reader('repositories.csv').get()
+        reader = CSVReader('repositories.csv').get()
         print(f"Загружено записей: {len(reader.reader)}")
         print(f"Поля: {reader.fieldnames[:5]}...")
 
         print("\n=== Тестируем State ===")
-        state = State(reader)
+        state = DataHandler(reader)
 
         result1 = state.select(['Name', 'Language', 'Stars']) \
             .filter('Language', 'Python') \
@@ -32,7 +32,7 @@ def main():
         print(f"Сохранённый запрос вернул: {len(result2)} записей")
 
         print("\n=== Тестируем Statistics ===")
-        stats = Statistics(reader.reader)
+        stats = DataStatistics(reader.reader)
 
         print(f"Медианный размер: {stats.get_median()}")
 

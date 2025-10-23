@@ -2,14 +2,13 @@ from typing import List, Dict, Any, Optional, Union
 from difflib import get_close_matches
 
 
-class State:
+class DataHandler:
     def __init__(self, reader: Any) -> None:
         self.result: Optional[Union[List[Dict[str, Any]], Dict[str, List[Dict[str, Any]]]]] = None
         self.reader = reader
         self.operations: List[tuple] = []
 
     def _validate_field(self, field: str) -> None:
-        """Проверка существования поля и подсказки по близким названиям"""
         if field not in self.reader.fieldnames:
             closest = get_close_matches(field, self.reader.fieldnames, n=3)
             error_msg = f"Поле '{field}' не найдено."
@@ -17,24 +16,24 @@ class State:
                 error_msg += f" Возможно вы имели в виду: {', '.join(closest)}"
             raise ValueError(error_msg)
 
-    def select(self, fields: Optional[List[str]] = None) -> 'State':
+    def select(self, fields: Optional[List[str]] = None) -> 'DataHandler':
         if fields:
             for field in fields:
                 self._validate_field(field)
             self.operations.append(('select', fields))
         return self
 
-    def sort(self, field: str, reverse: bool = False) -> 'State':
+    def sort(self, field: str, reverse: bool = False) -> 'DataHandler':
         self._validate_field(field)
         self.operations.append(('sort', field, reverse))
         return self
 
-    def filter(self, field: str, value: Any) -> 'State':
+    def filter(self, field: str, value: Any) -> 'DataHandler':
         self._validate_field(field)
         self.operations.append(('filter', field, value))
         return self
 
-    def group_by(self, field: str) -> 'State':
+    def group_by(self, field: str) -> 'DataHandler':
         self._validate_field(field)
         self.operations.append(('group_by', field))
         return self

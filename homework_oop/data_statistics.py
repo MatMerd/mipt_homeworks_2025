@@ -3,7 +3,7 @@ import json
 from typing import List, Dict, Any, Optional
 
 
-class Statistics:
+class DataStatistics:
     def __init__(self, data: List[Dict[str, Any]]) -> None:
         self.data = data
 
