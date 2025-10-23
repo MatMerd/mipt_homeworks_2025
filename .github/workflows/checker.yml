@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**/*.py'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**/*.py'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install linters
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff==0.14.0 mypy==1.18.2
+
+      - name: Collect Python files
+        id: files
+        shell: bash
+        run: |
+          FILES=$(git ls-files '*.py' 'homework_*/*.py' 'homework_*/**/*.py')
+          if [ -z "$FILES" ]; then
+            echo "none=true" >> "$GITHUB_OUTPUT"
+          else
+            printf "%s\n" $FILES > py-files.txt
+            echo "none=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Ruff lint
+        if: steps.files.outputs.none == 'false'
+        run: |
+          xargs -a py-files.txt ruff check
+
+      - name: Ruff format check
+        if: steps.files.outputs.none == 'false'
+        run: |
+          xargs -a py-files.txt ruff format --check
+
+      - name: Mypy type-check
+        if: steps.files.outputs.none == 'false'
+        run: |
+          xargs -a py-files.txt mypy
