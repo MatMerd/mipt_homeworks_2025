@@ -13,10 +13,9 @@ def read_repos() -> List[Dict[str, Any]]:
 
 def main():
     repos: List[Dict[str, Any]] = read_repos()
-    query: Query = Query(sort_by='Stars', filters={'Language': 'TypeScript'}, group_by='Default Branch')
+    query: Query = Query(sort_by='Size', filters= {'Language': 'TypeScript'})
     reposProcessor = ReposProcessor(repos, 1, query)
     res: Dict[Any, List[Dict[str, Any]]] = reposProcessor.execute()
-    print(res.keys())
     print("Hello from mipt-homeworks-2025!")
 
 

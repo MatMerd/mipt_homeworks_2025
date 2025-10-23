@@ -3,6 +3,7 @@ import copy
 
 from homework_oop.repository.query import Query
 from homework_oop.repository.errors import FilterError, SortingError, GroupingError
+from homework_oop.statistics import RepositoryStatistics
 
 
 class ReposProcessor:
@@ -19,10 +20,34 @@ class ReposProcessor:
         if self.query.sort_by:
             result = self._apply_sorting(result)
 
+        self._calc_stats(copy.copy(result))
+
         if self.query.group_by:
             return self._apply_grouping(result)
         else:
             return {"": result}
+
+    def _calc_stats(self, repos: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
+        size_results: List[Dict[str, Any]] = RepositoryStatistics.median(repos, "Size")
+        max_liked: List[Dict[str, Any]] = RepositoryStatistics.max(
+            repos, "Stars", limit=1
+        )
+        no_lang_repos: List[Dict[str, Any]] = RepositoryStatistics.select_by_predicate(
+            repos, "Language", lambda x: x == ""
+        )
+        max_watchers_repos: List[Dict[str, Any]] = RepositoryStatistics.max(
+            repos, "Watchers", limit=10
+        )
+        archived_repos: List[Dict[str, Any]] = RepositoryStatistics.select_by_predicate(
+            repos, "Is Archived", lambda x: x
+        )
+        return [
+            size_results,
+            max_liked,
+            no_lang_repos,
+            max_watchers_repos,
+            archived_repos,
+        ]
 
     def _apply_filters(self, repos: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         try:
