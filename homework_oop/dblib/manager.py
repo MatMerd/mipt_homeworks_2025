@@ -23,5 +23,3 @@ class DBManager:
             DBManager._bases[file_path][1] -=1
         else:
             DBManager._bases.pop(file_path)
-            
-
