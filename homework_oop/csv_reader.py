@@ -1,20 +1,25 @@
 import csv
-
+import typing as tp
 
 class CSVReader:
-    def __init__(self, filename) -> None:
-        self.reader = None
-        self.filename = filename
-        self.fieldnames = []
-
-    def get(self) -> 'CSVReader':
-        try:
-            with open(self.filename, newline='', encoding='utf-8') as csvfile:
-                csv_reader = csv.DictReader(csvfile)
-                self.fieldnames = csv_reader.fieldnames
-                self.reader = list(csv_reader)
-            return self
-        except FileNotFoundError:
-            raise FileNotFoundError(f'Файл {self.filename} не найден')
-        except Exception as e:
-            raise Exception(f'Ошибка при чтении файла: {str(e)}')
+    def __init__(self, filepath: str, delimetr: str = ",", encoding: str = "utf_8"):
+        """
+        :param filepath: путь к файлу
+        :param delimiter: разделитель колонок (по умолчанию ',')
+        :param encoding: кодировка файла
+        """
+        self.filepath = filepath
+        self.delimetr = delimetr
+        self.encoding = encoding
+    
+    def read_all(self) -> tp.List[tp.Dict[str, str]]:
+        """
+        Читает весь csv файл, возврващает список словарей, где ключи -
+        заголовки колонок
+        :return: список словарей, содержащие информацию из файла
+        """
+        with open(self.filepath, "r", encoding=self.encoding) as f:
+            reader = csv.DictReader(f)
+            data = list(reader)
+        
+        return data

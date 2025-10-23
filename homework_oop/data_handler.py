@@ -1,77 +1,140 @@
-from typing import List, Dict, Any, Optional, Union
-from difflib import get_close_matches
+import typing as tp
+from collections import defaultdict
+import difflib
 
+DataRow: tp.TypeAlias = tp.Dict[str, str]
+DataRowList: tp.TypeAlias = tp.List[tp.Dict[str, str]]
 
 class DataHandler:
-    def __init__(self, reader: Any) -> None:
-        self.result: Optional[Union[List[Dict[str, Any]], Dict[str, List[Dict[str, Any]]]]] = None
-        self.reader = reader
-        self.operations: List[tuple] = []
-
-    def _validate_field(self, field: str) -> None:
-        if field not in self.reader.fieldnames:
-            closest = get_close_matches(field, self.reader.fieldnames, n=3)
-            error_msg = f"Поле '{field}' не найдено."
-            if closest:
-                error_msg += f" Возможно вы имели в виду: {', '.join(closest)}"
-            raise ValueError(error_msg)
-
-    def select(self, fields: Optional[List[str]] = None) -> 'DataHandler':
-        if fields:
-            for field in fields:
-                self._validate_field(field)
-            self.operations.append(('select', fields))
+    def __init__(self, data: DataRowList):
+        """
+        :param data: список словарей, содержащие информацию из файла
+        """
+        self.data = data
+        self.temp_data = data
+        self.operations: tp.List[tp.Tuple[str, tp.Any]] = []
+    
+    def filter(self, *, condition: tp.Callable[[DataRow], bool]) -> "DataHandler":
+        """
+        Добавление фильтра данных в список операций
+        :param condition: функция, принимающая строку данных и возвращающая True, если строку нужно оставить
+        :return: self для цепочки вызовов
+        """
+        self.operations.append(("filter", condition))
         return self
 
-    def sort(self, field: str, reverse: bool = False) -> 'DataHandler':
-        self._validate_field(field)
-        self.operations.append(('sort', field, reverse))
+    def sort(self, *, column: str, reverse: bool = False) -> "DataHandler":
+        """
+        Добавление сортировки в список операций
+        :param column: название колонки для сортировки
+        :param reverse: если True, сортировка будет по убыванию
+        :return: self для цепочки вызовов
+        """
+        self.operations.append(("sort", (column, reverse)))
         return self
 
-    def filter(self, field: str, value: Any) -> 'DataHandler':
-        self._validate_field(field)
-        self.operations.append(('filter', field, value))
+    def group_by(self, *, column: str, agg: tp.Optional[tp.Dict[str, str]] = None) -> "DataHandler":
+        """
+        Добавление операции группировки по указанной колонке с возможной агрегацией
+        :param column: название колонки для сортировки, по которой будет проводиться группировка
+        :param agg: словарь вида {название_колонки: агрегатная_функция}, где функция одна из ['sum', 'mean', 'max', 'min', 'count']
+        :return: self для цепочки вызовов
+        """
+        self.operations.append(("group", (column, agg)))
         return self
-
-    def group_by(self, field: str) -> 'DataHandler':
-        self._validate_field(field)
-        self.operations.append(('group_by', field))
+    
+    def select(self, columns: tp.List[str]) -> "DataHandler":
+        """
+        Добавление операции выбора определенных колонок.
+        :param columns: cписок колонок, которые нужно оставить
+        :return: self для цепочки вызовов
+        """
+        self.operations.append(("select", columns))
         return self
+    
+    def execute(self) -> DataRowList:
+        """
+        Выполнение всех накопленных операции (filter, sort, group, select) над данными.
+        :return: список словарей с результатом обработки
+        """
+        pointer = 0
 
-    def execute(self) -> Union[List[Dict[str, Any]], Dict[str, List[Dict[str, Any]]]]:
-        appreciate_sort = ['filter', 'sort', 'group_by', 'select']
-        optimized_way = sorted(self.operations, key=lambda row: appreciate_sort.index(row[0]))
-        result: Union[
-            List[Dict[str, Any]], Dict[str, List[Dict[str, Any]]]] = self.reader.reader.copy()
+        while pointer < len(self.operations):
+            operation, param = self.operations[pointer]
 
-        for operation in optimized_way:
-            op_type = operation[0]
+            if operation == "filter":
+                filters = []
+                while pointer < len(self.operations) and self.operations[pointer][0] == "filter":
+                    filters.append(self.operations[pointer][1])
+                    pointer += 1
+                self.temp_data = [row for row in self.temp_data if all(f(row) for f in filters)]
+            
+            if operation == "sort":
+                column, reverse = param
+                self._check_column(column)
+                self.temp_data = sorted(self.temp_data, key=lambda r: int(r[column]), reverse=reverse)
+                pointer += 1
+            
+            if operation == "group":
+                column, agg = param
+                self._check_column(column)
 
-            if op_type == 'filter':
-                field, value = operation[1], operation[2]
-                result = [item for item in result if item.get(field) == value]
+                grouped = defaultdict(list)
+                for row in self.temp_data:
+                    grouped[row[column]].append(row)
+                
+                new_data = []
+                for group_value, rows in grouped.items():
+                    base_row: tp.Dict[str, tp.Any] = {column: group_value}
+                    if agg:
+                        for field, func_name in agg.items():
+                            self._check_column(field)
+                            
+                            values = [r[field] for r in rows if r[field] is not None]
 
-            elif op_type == 'sort':
-                field, reverse = operation[1], operation[2]
-                result = sorted(result, key=lambda x: x.get(field, ''), reverse=reverse)
+                            if func_name == "sum":
+                                base_row[field + "_sum"] = sum([int(v) for v in values])
+                            elif func_name == "mean":
+                                base_row[field + "_mean"] = sum([int(v) for v in values]) / len(values)
+                            elif func_name == "max":
+                                base_row[field + "_max"] = max(values)
+                            elif func_name == "min":
+                                base_row[field + "_min"] = min(values)
+                            elif func_name == "count":
+                                base_row[field + "_count"] = len(values)
+                            else:
+                                raise ValueError(f"Неизвестная агрегатная функция: {func_name}")
+                        
+                    new_data.append(base_row)
+                pointer += 1
+                self.temp_data = new_data
+            
+            if operation == "select":
+                columns = set(param)
+                pointer += 1
 
-            elif op_type == 'group_by':
-                field = operation[1]
-                grouped: Dict[str, List[Dict[str, Any]]] = {}
-                for item in result:
-                    key = item.get(field, '')
-                    if key not in grouped:
-                        grouped[key] = []
-                    grouped[key].append(item)
-                result = grouped
-
-            elif op_type == 'select':
-                fields = operation[1]
-                if isinstance(result, dict):
-                    for key in result:
-                        result[key] = [{f: item.get(f) for f in fields} for item in result[key]]
-                else:
-                    result = [{f: item.get(f) for f in fields} for item in result]
-
-        self.result = result
-        return result
+                while pointer < len(self.operations) and self.operations[pointer][0] == "select":
+                    next_columns = set(self.operations[pointer][1])
+                    if not next_columns.issubset(columns):
+                        raise ValueError(f"Columns '{next_columns - columns}' does not exist.")
+                    columns &= next_columns
+                    pointer += 1
+                self.temp_data = [{k : v for k, v in row.items() if k in columns} for row in self.temp_data]
+    
+        self.operations = []
+        return_data = self.temp_data
+        self.temp_data = self.data
+        return return_data
+    
+    def _check_column(self, column: str) -> None:
+        """
+        Проверка существования указанной колонки в данных.
+        :param column: название колонки
+        :raises ValueError: если колонка не найдена, с подсказкой близких по имени колонок
+        """
+        available_columns = self.temp_data[0].keys()
+        if column not in available_columns:
+            close_matches = difflib.get_close_matches(column, available_columns)
+            raise ValueError(
+                f"Column '{column}' does not exist. Did you mean one of the following columns: {close_matches} ?"             
+            )

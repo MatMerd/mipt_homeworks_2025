@@ -1,41 +1,44 @@
-import csv
-import json
-from typing import List, Dict, Any, Optional
+import typing as tp
+from datetime import datetime
 
+Repo: tp.TypeAlias = tp.Dict[str, str]
+RepoList: tp.TypeAlias = tp.List[tp.Dict[str, str]]
 
 class DataStatistics:
-    def __init__(self, data: List[Dict[str, Any]]) -> None:
-        self.data = data
-
-    def get_median(self) -> float:
-        sizes = [int(item['Size']) for item in self.data]
+    """
+    Класс для вычисления различных статистик по данным репозиториев.
+    """
+    @staticmethod
+    def median_repo_size(data: RepoList) -> float:
+        sizes = [float(repo['Size']) for repo in data]
         return (min(sizes) + max(sizes)) / 2
+    
+    @staticmethod
+    def max_stars_repo(data: RepoList) -> Repo:
+        return max(data, key=lambda x: int(x["Stars"]))
 
-    def get_most_liked(self) -> Dict[str, Any]:
-        return max(self.data, key=lambda x: int(x['Stars']))
-
-    def get_repos_without_language(self) -> List[Dict[str, Any]]:
-        return list(filter(lambda x: x['Language'] == '', self.data))
-
-    def get_top10_most_commited(self) -> List[Dict[str, Any]]:
-        return sorted(self.data, key=lambda x: int(x['Forks']), reverse=True)[:10]
-
-    def save_to_csv(self, filename: str, data: Optional[List[Dict[str, Any]]] = None) -> None:
-        if data is None:
-            data = self.data
-
-        if not data:
-            raise ValueError("Нет данных для сохранения")
-
-        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-            fieldnames = data[0].keys()
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(data)
-
-    def save_to_json(self, filename: str, data: Optional[List[Dict[str, Any]]] = None) -> None:
-        if data is None:
-            data = self.data
-
-        with open(filename, 'w', encoding='utf-8') as jsonfile:
-            json.dump(data, jsonfile, indent=2, ensure_ascii=False)
+    @staticmethod
+    def repos_without_language(data: RepoList) -> RepoList:
+        return list(filter(lambda x: x["Language"] == '', data))
+    
+    @staticmethod
+    def top_recently_updated(data: RepoList, top_n: int = 10) -> RepoList:
+        sorted_repos = sorted(
+            data,
+            key=lambda r: datetime.fromisoformat(r["Updated At"]),
+            reverse=True
+        )
+        return sorted_repos[:top_n]
+    
+    @staticmethod
+    def top_active_repos(data: RepoList, top_n: int = 10) -> RepoList:
+        sorted_repos = sorted(
+            data,
+            key=lambda r: (int(r["Issues"]) + int(r["Forks"]) + int(r["Stars"]), datetime.fromisoformat(r["Updated At"])),
+            reverse=True
+        )
+        return sorted_repos[:top_n]
+      
+    @staticmethod
+    def get_top10_most_forked(data: RepoList, top_n: int = 10) -> RepoList:
+        return sorted(data, key=lambda x: int(x['Forks']), reverse=True)[:top_n]
