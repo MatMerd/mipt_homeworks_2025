@@ -10,32 +10,26 @@ class DataProcessor:
         """
         :param data: Данные для обработки
         """
-        self._original_data = data
-        self._data = data.copy()
+        self._data = data
         self._operations = []
         self._executed = False
         self._field_info = self._analyze_fields()
 
     def _analyze_fields(self) -> Dict[str, Any]:
-        """Анализ полей данных"""
-        if not self._original_data:
+        """
+        Собирает типы атрибутов
+        :return:
+        """
+        if not self._data:
             return {}
 
         field_info = {}
-        for field in self._original_data[0].keys():
-            # Определяем тип данных поля
-            sample_value = self._original_data[0].get(field)
+        for field in self._data[0].keys():
+            sample_value = self._data[0].get(field)
             field_type = type(sample_value).__name__ if sample_value is not None else 'unknown'
 
-            # Собираем уникальные значения для подсказок
-            unique_values = set()
-            for row in self._original_data[:100]:  # Ограничиваем для производительности
-                if field in row:
-                    unique_values.add(str(row[field]))
-
             field_info[field] = {
-                'type': field_type,
-                'sample_values': list(unique_values)[:5]  # Первые 5 значений для подсказок
+                'type': field_type
             }
 
         return field_info
@@ -56,10 +50,10 @@ class DataProcessor:
         :param field: атрибут
         :return:
         """
-        if not self._original_data:
+        if not self._data:
             return
 
-        if field not in self._original_data[0]:
+        if field not in self._data[0]:
             raise ValueError(
                 f"Атрибут '{field}' не найден"
             )
@@ -100,19 +94,12 @@ class DataProcessor:
         """
         Группирует данные из таблицы
         :param field: поле для группировки
-        :param aggregation: словарь с агрегационными функциями {'новое_поле': функция}
+        :param aggregation: словарь с агрегационными функциями
         """
         self._validate_field(field)
 
         if aggregation is None:
             aggregation = {}
-
-        for agg_field in aggregation.keys():
-            if agg_field in self._field_info:
-                raise ValueError(
-                    f"Агрегационное поле '{agg_field}' конфликтует с существующим полем. "
-                    f"Используйте другое имя."
-                )
 
         self._operations.append(('group_by', {'field': field, 'aggregation': aggregation}))
         return self
@@ -214,33 +201,27 @@ class DataProcessor:
         :param aggregation: набор полей с их агрегирующими функциями
         :return:
         """
-        # Создаем обычный словарь для группировки
         groups = {}
 
-        # Группируем данные
         for row in data:
             group_key = row.get(field)
 
-            # Если ключа еще нет в словаре, создаем пустой список
             if group_key not in groups:
                 groups[group_key] = []
 
-            # Добавляем строку в соответствующую группу
             groups[group_key].append(row)
 
-        # Применяем агрегации
         result = []
         for group_key, group_data in groups.items():
             group_row = {field: group_key}
 
             for agg_name, agg_func in aggregation.items():
                 try:
-                    # Для агрегации используем все числовые поля кроме группировочного
                     values_to_aggregate = []
                     for row in group_data:
                         for key, value in row.items():
-                            if key != field and isinstance(value, (int, float)):
-                                values_to_aggregate.append(value)
+                            if key == agg_name:
+                                values_to_aggregate.append(int(value))
 
                     if values_to_aggregate:
                         group_row[agg_name] = agg_func(values_to_aggregate)
@@ -267,17 +248,12 @@ class DataProcessor:
         Выполняет список операций в оптимальном порядке
         :return: Данные, удовлетворяющие запросу
         """
-        if self._executed:
+        if not self._operations:
             return self._data
 
-        if not self._operations:
-            return self._original_data
-
-        # Оптимизируем порядок операций
         optimized_operations = self._optimize_operations_order()
 
-        # Выполняем операции
-        result = self._original_data.copy()
+        result = self._data.copy()
 
         for operation_type, params in optimized_operations:
             try:
@@ -294,6 +270,5 @@ class DataProcessor:
             except Exception as e:
                 raise RuntimeError(f"Ошибка при выполнении операции {operation_type}: {e}")
 
-        self._data = result
-        self._executed = True
+        self._operations = []
         return result
