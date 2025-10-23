@@ -13,8 +13,8 @@ class CSVLoader:
         self.rows = []
         self.field_idx = {}
 
-    def _auto_type(self, value):
-        if not self.auto_typization or not isinstance(value, str):
+    def _auto_type(self, value, flag):
+        if not self.auto_typization or not isinstance(value, str) or flag:
             return value
         if value.isdigit():
             return int(value)
@@ -35,6 +35,6 @@ class CSVLoader:
             self.header = next(reader)
             self.field_idx = {name: i for i, name in enumerate(self.header)}
             self.rows = [
-                tuple(self._auto_type(v) for v in row)
+                tuple(self._auto_type(row[i], i < 2) for i in len(row))
                 for row in reader
             ]
