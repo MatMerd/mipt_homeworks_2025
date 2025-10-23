@@ -10,24 +10,16 @@ class DataStatistics:
     """
     @staticmethod
     def median_repo_size(data: RepoList) -> float:
-        median = 0.0
-        for repo in data:
-            median += float(repo["Size"])
-        return median / len(data)
+        sizes = [float(repo['Size']) for repo in data]
+        return (min(sizes) + max(sizes)) / 2
     
     @staticmethod
     def max_stars_repo(data: RepoList) -> Repo:
-        max_stars = int(data[0]["Stars"])
-        max_stars_repo = data[0]
-        for repo in data:
-            if int(repo["Stars"]) > max_stars:
-                max_stars = int(repo["Stars"])
-                max_stars_repo = repo
-        return max_stars_repo
+        return max(data, key=lambda x: int(x["Stars"]))
 
     @staticmethod
     def repos_without_language(data: RepoList) -> RepoList:
-        return [repo for repo in data if repo["Language"] == '']
+        return list(filter(lambda x: x["Language"] == '', data))
     
     @staticmethod
     def top_recently_updated(data: RepoList, top_n: int = 10) -> RepoList:
@@ -46,3 +38,7 @@ class DataStatistics:
             reverse=True
         )
         return sorted_repos[:top_n]
+      
+    @staticmethod
+    def get_top10_most_forked(data: RepoList, top_n: int = 10) -> RepoList:
+        return sorted(data, key=lambda x: int(x['Forks']), reverse=True)[:top_n]
