@@ -1,4 +1,4 @@
-from statistics import RepositoryStatistics
+from .statistics import RepositoryStatistics
 import json
 from typing import Dict, List, Any, Callable
 
