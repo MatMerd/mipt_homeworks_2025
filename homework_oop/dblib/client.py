@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from .db_connect import *
+from .connect import *
 
 
 @dataclass
@@ -13,7 +13,10 @@ class Client:
         return self._total_connections_count
 
     def Connect(self, file_name : str):
-        self.connections[self._GetNewIndex()] = DBConnect(file_name)
+        id_ = self._GetNewIndex()
+        self.connections[id_] = DBConnect(file_name)
+        return id_
+
 
     def Close(self, ind : int):
         del self.connections[ind]
@@ -61,32 +64,35 @@ class Client:
                 query.append(new_line)
             return query
 
-        def Print(self):
+        def GetData(self):
             return self.data
 
     def Query(self, connection_ind : int = None, where_val : list[tuple] = None, where_col : list[tuple] = None, order_by : list[tuple] = None):
         if connection_ind is None or not connection_ind in self.connections:
             raise self.NoConnectionFound(f"No connect with {connection_ind=}")
         connection = self.connections[connection_ind]
-        for where_query in where_val:
-            if len(where_query) != 3:
-                raise self.InvalidArgumentNumber(f"where_val expected 3 arguments, got {len(where_query)} : {where_query}")
-            if where_query[1] not in ["<", "<=", ">", ">=", "=="]:
-                raise self.InvalidArgument(f"Not suitable operator {where_query[1]}")
-            connection.add_query(("WHERE", where_query[1], where_query[0], where_query[2]))
-        for where_query in where_col:
-            if len(where_query) != 3:
-                raise self.InvalidArgumentNumber(f"where_cal expected 3 arguments, got {len(where_query)} : {where_query}")
-            if where_query[1] not in ["<", "<=", ">", ">=", "=="]:
-                raise self.InvalidArgument(f"Not suitable operator {where_query[1]}")
-            connection.add_query(("WHERECOL", where_query[1], where_query[0], where_query[2]))
-        for order_by_query in order_by:
-            if len(order_by_query) != 2:
-                raise self.InvalidArgumentNumber(f"order_by expected 2 arguments, got {len(order_by_query)} : {order_by_query}")
-            if order_by_query[1] not in [True, False]:
-                raise self.InvalidArgument(f"The sorting order in order_by is not clear : {order_by_query[1]} not a boolean True or False")
-            if order_by_query[1]:
-                connection.add_query(("SORT", "r"))
-            else:
-                connection.add_query(("SORT", order_by_query[0], "n"))
+        if not where_val is None:
+            for where_query in where_val:
+                if len(where_query) != 3:
+                    raise self.InvalidArgumentNumber(f"where_val expected 3 arguments, got {len(where_query)} : {where_query}")
+                if where_query[1] not in ["<", "<=", ">", ">=", "=="]:
+                    raise self.InvalidArgument(f"Not suitable operator {where_query[1]}")
+                connection.add_query(("WHERE", where_query[1], where_query[0], where_query[2]))
+        if not where_col is None:
+            for where_query in where_col:
+                if len(where_query) != 3:
+                    raise self.InvalidArgumentNumber(f"where_cal expected 3 arguments, got {len(where_query)} : {where_query}")
+                if where_query[1] not in ["<", "<=", ">", ">=", "=="]:
+                    raise self.InvalidArgument(f"Not suitable operator {where_query[1]}")
+                connection.add_query(("WHERECOL", where_query[1], where_query[0], where_query[2]))
+        if not order_by is None:
+            for order_by_query in order_by:
+                if len(order_by_query) != 2:
+                    raise self.InvalidArgumentNumber(f"order_by expected 2 arguments, got {len(order_by_query)} : {order_by_query}")
+                if order_by_query[1] not in [True, False]:
+                    raise self.InvalidArgument(f"The sorting order in order_by is not clear : {order_by_query[1]} not a boolean True or False")
+                if order_by_query[1]:
+                    connection.add_query(("SORT", "r", order_by_query[0]))
+                else:
+                    connection.add_query(("SORT", "n", order_by_query[0]))
         return self.DataManager(connection.execute(), connection.get_headers())

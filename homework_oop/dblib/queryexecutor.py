@@ -49,8 +49,7 @@ class QueryExecutor:
 
     def execute(self, rows, queries):
         queries = self._sort_queries(queries)
-
-        results = []
+        results = rows.copy()
         for query in queries:
             qtype = query[0]
             if qtype == "WHERE":

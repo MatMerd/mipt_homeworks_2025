@@ -9,7 +9,7 @@ class DBConnect:
         self.closed = False
     
     def get_headers(self):
-        return self.base.header
+        return self.base.indexer.header
     
     def add_query(self, query):
         self.queries.append(query)
@@ -18,8 +18,9 @@ class DBConnect:
         self.queries.clear()
 
     def execute(self):
-        self.base.execute(self.queries)
+        ans = self.base.execute(self.queries)
         self.queries.clear()
+        return ans
 
     def close(self):
         if not self.closed:
