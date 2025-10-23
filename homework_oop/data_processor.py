@@ -1,7 +1,5 @@
 from __future__ import annotations
-from typing import List, Dict, Any, Optional, Union, Callable
-from collections import defaultdict
-import operator
+from typing import List, Dict, Any, Callable, Optional
 import difflib
 
 
@@ -11,7 +9,7 @@ class DataProcessor:
         :param data: Данные для обработки
         """
         self._data = data
-        self._operations = []
+        self._operations: List[Any] = []
         self._executed = False
         self._field_info = self._analyze_fields()
 
@@ -26,11 +24,11 @@ class DataProcessor:
         field_info = {}
         for field in self._data[0].keys():
             sample_value = self._data[0].get(field)
-            field_type = type(sample_value).__name__ if sample_value is not None else 'unknown'
+            field_type = (
+                type(sample_value).__name__ if sample_value is not None else "unknown"
+            )
 
-            field_info[field] = {
-                'type': field_type
-            }
+            field_info[field] = {"type": field_type}
 
         return field_info
 
@@ -41,7 +39,9 @@ class DataProcessor:
         :return: предполагаемые атрибуты
         """
         available_fields = list(self._field_info.keys())
-        suggestions = difflib.get_close_matches(field, available_fields, n=3, cutoff=0.6)
+        suggestions = difflib.get_close_matches(
+            field, available_fields, n=3, cutoff=0.6
+        )
         return suggestions
 
     def _validate_field(self, field: str):
@@ -54,9 +54,7 @@ class DataProcessor:
             return
 
         if field not in self._data[0]:
-            raise ValueError(
-                f"Атрибут '{field}' не найден"
-            )
+            raise ValueError(f"Атрибут '{field}' не найден")
 
     def select(self, fields: List[str]) -> DataProcessor:
         """
@@ -67,7 +65,7 @@ class DataProcessor:
         for field in fields:
             self._validate_field(field)
 
-        self._operations.append(('select', {'fields': fields}))
+        self._operations.append(("select", {"fields": fields}))
         return self
 
     def where(self, condition: Callable[[Dict[str, Any]], bool]) -> DataProcessor:
@@ -76,7 +74,7 @@ class DataProcessor:
         :param condition: условие
         :return:
         """
-        self._operations.append(('where', {'condition': condition}))
+        self._operations.append(("where", {"condition": condition}))
         return self
 
     def order_by(self, field: str, descending: bool = False) -> DataProcessor:
@@ -87,10 +85,14 @@ class DataProcessor:
         :return:
         """
         self._validate_field(field)
-        self._operations.append(('order_by', {'field': field, 'descending': descending}))
+        self._operations.append(
+            ("order_by", {"field": field, "descending": descending})
+        )
         return self
 
-    def group_by(self, field: str, aggregation: Dict[str, Callable] = None) -> DataProcessor:
+    def group_by(
+        self, field: str, aggregation: Optional[Dict[str, Callable]] = None
+    ) -> DataProcessor:
         """
         Группирует данные из таблицы
         :param field: поле для группировки
@@ -101,7 +103,9 @@ class DataProcessor:
         if aggregation is None:
             aggregation = {}
 
-        self._operations.append(('group_by', {'field': field, 'aggregation': aggregation}))
+        self._operations.append(
+            ("group_by", {"field": field, "aggregation": aggregation})
+        )
         return self
 
     def limit(self, count: int) -> DataProcessor:
@@ -113,7 +117,7 @@ class DataProcessor:
         if count < 0:
             raise ValueError("Лимит не может быть отрицательным")
 
-        self._operations.append(('limit', {'count': count}))
+        self._operations.append(("limit", {"count": count}))
         return self
 
     def _optimize_operations_order(self) -> List[tuple]:
@@ -133,15 +137,15 @@ class DataProcessor:
         for operation in self._operations:
             op_type, params = operation
 
-            if op_type == 'where':
+            if op_type == "where":
                 where_ops.append(operation)
-            elif op_type == 'select':
+            elif op_type == "select":
                 select_ops.append(operation)
-            elif op_type == 'order_by':
+            elif op_type == "order_by":
                 order_by_ops.append(operation)
-            elif op_type == 'group_by':
+            elif op_type == "group_by":
                 group_by_ops.append(operation)
-            elif op_type == 'limit':
+            elif op_type == "limit":
                 limit_ops.append(operation)
 
         # Оптимальный порядок: where -> group_by -> order_by -> select -> limit
@@ -155,7 +159,9 @@ class DataProcessor:
 
         return optimized_order
 
-    def _execute_where(self, data: List[Dict[str, Any]], condition: Callable) -> List[Dict[str, Any]]:
+    def _execute_where(
+        self, data: List[Dict[str, Any]], condition: Callable
+    ) -> List[Dict[str, Any]]:
         """
         Выополняет фильтрацию данных
         :param data: данные
@@ -164,7 +170,9 @@ class DataProcessor:
         """
         return [row for row in data if condition(row)]
 
-    def _execute_select(self, data: List[Dict[str, Any]], fields: List[str]) -> List[Dict[str, Any]]:
+    def _execute_select(
+        self, data: List[Dict[str, Any]], fields: List[str]
+    ) -> List[Dict[str, Any]]:
         """
         Выполняет селект данных
         :param data: данные
@@ -173,7 +181,9 @@ class DataProcessor:
         """
         return [{field: row[field] for field in fields if field in row} for row in data]
 
-    def _execute_order_by(self, data: List[Dict[str, Any]], field: str, descending: bool = False) -> List[Dict[str, Any]]:
+    def _execute_order_by(
+        self, data: List[Dict[str, Any]], field: str, descending: bool = False
+    ) -> List[Dict[str, Any]]:
         """
         Выполняет сортировку данных
         :param data: данные
@@ -184,16 +194,19 @@ class DataProcessor:
 
         def get_sort_key(row):
             value = row.get(field)
-            return (value is not None, value) if not descending else (value is None, value)
+            return (
+                (value is not None, value) if not descending else (value is None, value)
+            )
 
         return sorted(data, key=get_sort_key, reverse=descending)
 
     def _get_sort_key(self, row, field, descending):
-            value = row.get(field)
-            return (value is not None, value) if not descending else (value is None, value)
+        value = row.get(field)
+        return (value is not None, value) if not descending else (value is None, value)
 
-    def _execute_group_by(self, data: List[Dict[str, Any]], field: str, aggregation: Dict[str, Callable]) -> List[
-        Dict[str, Any]]:
+    def _execute_group_by(
+        self, data: List[Dict[str, Any]], field: str, aggregation: Dict[str, Callable]
+    ) -> List[Dict[str, Any]]:
         """
         Выполняет группировку данных
         :param data: данные
@@ -201,19 +214,20 @@ class DataProcessor:
         :param aggregation: набор полей с их агрегирующими функциями
         :return:
         """
-        groups = {}
+        groups: Dict[str, list[Any]] = {}
 
         for row in data:
             group_key = row.get(field)
 
-            if group_key not in groups:
-                groups[group_key] = []
+            if isinstance(group_key, str):
+                if group_key not in groups:
+                    groups[group_key] = []
 
-            groups[group_key].append(row)
+                groups[group_key].append(row)
 
         result = []
         for group_key, group_data in groups.items():
-            group_row = {field: group_key}
+            group_row: Dict[str, Optional[str]] = {field: group_key}
 
             for agg_name, agg_func in aggregation.items():
                 try:
@@ -234,7 +248,9 @@ class DataProcessor:
 
         return result
 
-    def _execute_limit(self, data: List[Dict[str, Any]], count: int) -> List[Dict[str, Any]]:
+    def _execute_limit(
+        self, data: List[Dict[str, Any]], count: int
+    ) -> List[Dict[str, Any]]:
         """
         Выполняет ограничение выборки
         :param data: данные
@@ -257,18 +273,24 @@ class DataProcessor:
 
         for operation_type, params in optimized_operations:
             try:
-                if operation_type == 'where':
-                    result = self._execute_where(result, params['condition'])
-                elif operation_type == 'select':
-                    result = self._execute_select(result, params['fields'])
-                elif operation_type == 'order_by':
-                    result = self._execute_order_by(result, params['field'], params['descending'])
-                elif operation_type == 'group_by':
-                    result = self._execute_group_by(result, params['field'], params['aggregation'])
-                elif operation_type == 'limit':
-                    result = self._execute_limit(result, params['count'])
+                if operation_type == "where":
+                    result = self._execute_where(result, params["condition"])
+                elif operation_type == "select":
+                    result = self._execute_select(result, params["fields"])
+                elif operation_type == "order_by":
+                    result = self._execute_order_by(
+                        result, params["field"], params["descending"]
+                    )
+                elif operation_type == "group_by":
+                    result = self._execute_group_by(
+                        result, params["field"], params["aggregation"]
+                    )
+                elif operation_type == "limit":
+                    result = self._execute_limit(result, params["count"])
             except Exception as e:
-                raise RuntimeError(f"Ошибка при выполнении операции {operation_type}: {e}")
+                raise RuntimeError(
+                    f"Ошибка при выполнении операции {operation_type}: {e}"
+                )
 
         self._operations = []
         return result

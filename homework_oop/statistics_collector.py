@@ -1,6 +1,5 @@
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional
 import statistics
-from collections import Counter
 
 
 class StatCollector:
@@ -15,7 +14,7 @@ class StatCollector:
         sizes = []
 
         for repo in self.data:
-            size = repo.get('Size')
+            size = repo.get("Size")
             if size is not None:
                 sizes.append(int(size))
 
@@ -39,7 +38,7 @@ class StatCollector:
         most_starred = None
 
         for repo in self.data:
-            stars = repo.get('Stars')
+            stars = repo.get("Stars")
             # print(stars)
             if stars and int(stars) > max_stars:
                 max_stars = int(stars)
@@ -55,8 +54,8 @@ class StatCollector:
         repos_without_lang = []
 
         for repo in self.data:
-            language = repo.get('Language')
-            if not language or language in ['','<null>', 'null', 'None', None]:
+            language = repo.get("Language")
+            if not language or language in ["", "<null>", "null", "None", None]:
                 repos_without_lang.append(repo)
 
         return len(repos_without_lang) / len(self.data)
@@ -81,9 +80,10 @@ class StatCollector:
         issues_list = []
 
         for repo in self.data:
-            issues = repo.get('Issues')
+            issues = repo.get("Issues")
 
-            issues_list.append(int(issues))
+            if isinstance(issues, str):
+                issues_list.append(int(issues))
 
         if not issues_list:
             return None
@@ -96,8 +96,8 @@ class StatCollector:
         :return:
         """
         return {
-            'median_repo_size': self.get_median_repo_size(),
-            'most_starred_repo': self.get_most_starred_repo(),
-            'avg_issues_count': self.get_avg_issues_count(),
-            'get_percentage_of_repos_without_language': self.get_percentage_of_repos_without_language()
+            "median_repo_size": self.get_median_repo_size(),
+            "most_starred_repo": self.get_most_starred_repo(),
+            "avg_issues_count": self.get_avg_issues_count(),
+            "get_percentage_of_repos_without_language": self.get_percentage_of_repos_without_language(),
         }

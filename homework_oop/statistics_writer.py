@@ -1,28 +1,26 @@
 import json
 import csv
-import os
-from typing import List, Dict, Any, Union
-from datetime import datetime
+from typing import Dict, Any, Optional
 
 
 class StatWriter:
     def __init__(self, statistics: Dict[str, Any]):
         self.statistics = statistics
 
-    def export_to_json(self, filename: str = None) -> str:
+    def export_to_json(self, filename: Optional[str] = None) -> str:
         """
         Экспортирует статистики в json файл
         :param filename: название файла
         :return:
         """
         if filename is None:
-            filename = f"repository_statistics.json"
+            filename = "repository_statistics.json"
 
-        if not filename.endswith('.json'):
-            filename += '.json'
+        if not filename.endswith(".json"):
+            filename += ".json"
 
         try:
-            with open(filename, 'w', encoding='utf-8') as f:
+            with open(filename, "w", encoding="utf-8") as f:
                 json.dump(self.statistics, f, ensure_ascii=False, default=str)
 
             return filename
@@ -30,23 +28,23 @@ class StatWriter:
         except Exception as e:
             raise Exception(f"Ошибка при сохранении в JSON: {e}")
 
-    def export_to_csv(self, filename: str = None) -> str:
+    def export_to_csv(self, filename: Optional[str] = None) -> str:
         """
         Экспортирует статистики в csv файл
         :param filename: название файла
         :return:
         """
         if filename is None:
-            filename = f"repository_statistics.csv"
+            filename = "repository_statistics.csv"
 
-        if not filename.endswith('.csv'):
-            filename += '.csv'
+        if not filename.endswith(".csv"):
+            filename += ".csv"
 
         try:
-            with open(filename, 'w', encoding='utf-8', newline='') as f:
+            with open(filename, "w", encoding="utf-8", newline="") as f:
                 writer = csv.writer(f)
 
-                writer.writerow(['Metric', 'Value'])
+                writer.writerow(["Metric", "Value"])
 
                 self._write_dict_to_csv(writer, self.statistics)
 
@@ -69,6 +67,6 @@ class StatWriter:
                 if value and isinstance(value[0], dict):
                     writer.writerow([full_key, json.dumps(value, default=str)])
                 else:
-                    writer.writerow([full_key, ', '.join(map(str, value))])
+                    writer.writerow([full_key, ", ".join(map(str, value))])
             else:
                 writer.writerow([full_key, value])

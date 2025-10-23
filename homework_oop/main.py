@@ -8,10 +8,8 @@ data = reader.read_as_dict()
 user = User(data)
 
 user.update_user_settings(
-    sort_field=None,
-    sort_descending=False,
-    group_field='Language',
-    aggregation={'Issues': lambda x: sum(x)}
+    group_field="Language",
+    aggregation={"Issues": lambda x: sum(x)},
 )
 user.apply_saved_settings()
 
@@ -20,10 +18,7 @@ for row in default_result_one:
     print(row)
 
 user.update_user_settings(
-    sort_field='Name',
-    sort_descending=True,
-    group_field=None,
-    aggregation=None
+    sort_field="Name", sort_descending=True, group_field=None, aggregation=None
 )
 user.apply_saved_settings()
 
@@ -33,12 +28,12 @@ for row in default_result_two:
 
 query_id = user.create_and_save_query(
     "Популярные python репозитории",
-        [
-            ('where', {'condition': lambda x: x['Language'] == 'Python'}),
-            ('where', {'condition': lambda x: int(x['Stars']) > 100000}),
-            ('select', {'fields': ['Name', 'URL', 'Stars', 'Issues', 'Size', 'Language']}),
-            ('order_by', {'field': 'Size', 'descending': True})
-        ]
+    [
+        ("where", {"condition": lambda x: x["Language"] == "Python"}),
+        ("where", {"condition": lambda x: int(x["Stars"]) > 100000}),
+        ("select", {"fields": ["Name", "URL", "Stars", "Issues", "Size", "Language"]}),
+        ("order_by", {"field": "Size", "descending": True}),
+    ],
 )
 
 result = user.execute_saved_query(query_id)

@@ -1,16 +1,15 @@
 from typing import List, Dict, Any, Optional, Callable
-import json
 import uuid
-from datetime import datetime
+
 
 class Query:
     def __init__(self):
         self.saved_queries = {}
         self.default_settings = {
-            'sort_field': None,
-            'sort_descending': False,
-            'group_field': None,
-            'aggregation': None
+            "sort_field": None,
+            "sort_descending": False,
+            "group_field": None,
+            "aggregation": None,
         }
 
     def save_query(self, name: str, query_operations: List[tuple]) -> str:
@@ -23,9 +22,9 @@ class Query:
         query_id = str(uuid.uuid4())
 
         self.saved_queries[query_id] = {
-            'id': query_id,
-            'name': name,
-            'operations': query_operations
+            "id": query_id,
+            "name": name,
+            "operations": query_operations,
         }
 
         return query_id
@@ -56,7 +55,12 @@ class Query:
             return True
         return False
 
-    def update_query(self, query_id: str, name: str = None, operations: List[tuple] = None) -> bool:
+    def update_query(
+        self,
+        query_id: str,
+        name: Optional[str] = None,
+        operations: Optional[List[tuple]] = None,
+    ) -> bool:
         """
         Обновляет запрос по id
         :param query_id: id запроса
@@ -68,15 +72,20 @@ class Query:
             return False
 
         if name is not None:
-            self.saved_queries[query_id]['name'] = name
+            self.saved_queries[query_id]["name"] = name
 
         if operations is not None:
-            self.saved_queries[query_id]['operations'] = operations
+            self.saved_queries[query_id]["operations"] = operations
 
         return True
 
-    def save_settings(self, sort_field: str = None, sort_descending: bool = False,
-                      group_field: str = None, aggregation: Dict[str, Callable] = None):
+    def save_settings(
+        self,
+        sort_field: Optional[str] = None,
+        sort_descending: bool = False,
+        group_field: Optional[str] = None,
+        aggregation: Optional[Dict[str, Callable]] = None,
+    ):
         """
         Сохраняет пользовательские настройки
         :param sort_field: атрибут сортировки
@@ -85,12 +94,14 @@ class Query:
         :param aggregation: агрегационные функции
         :return:
         """
-        self.default_settings.update({
-            'sort_field': sort_field,
-            'sort_descending': sort_descending,
-            'group_field': group_field,
-            'aggregation': aggregation
-        })
+        self.default_settings.update(
+            {
+                "sort_field": sort_field,
+                "sort_descending": sort_descending,
+                "group_field": group_field,
+                "aggregation": aggregation,
+            }
+        )
 
     def get_settings(self) -> Dict[str, Any]:
         """

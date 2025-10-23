@@ -1,11 +1,9 @@
 from __future__ import annotations
-from typing import List, Dict, Any, Optional, Callable
-import json
-import uuid
-from datetime import datetime
+from typing import List, Dict, Any, Callable, Optional
 
 from data_processor import DataProcessor
 from query import Query
+
 
 class User:
     def __init__(self, data: List[Dict[str, Any]]):
@@ -20,11 +18,13 @@ class User:
         """
         settings = self._query.get_settings()
 
-        if settings['sort_field']:
-            self._processor.order_by(settings['sort_field'], settings['sort_descending'])
+        if settings["sort_field"]:
+            self._processor.order_by(
+                settings["sort_field"], settings["sort_descending"]
+            )
 
-        if settings['group_field']:
-            self._processor.group_by(settings['group_field'], settings['aggregation'])
+        if settings["group_field"]:
+            self._processor.group_by(settings["group_field"], settings["aggregation"])
 
         return self
 
@@ -40,17 +40,17 @@ class User:
 
         new_processor = DataProcessor(self._data)
 
-        for op_type, params in saved_query['operations']:
-            if op_type == 'select':
-                new_processor.select(params['fields'])
-            elif op_type == 'where':
-                new_processor.where(params['condition'])
-            elif op_type == 'order_by':
-                new_processor.order_by(params['field'], params['descending'])
-            elif op_type == 'group_by':
-                new_processor.group_by(params['field'], params['aggregation'])
-            elif op_type == 'limit':
-                new_processor.limit(params['count'])
+        for op_type, params in saved_query["operations"]:
+            if op_type == "select":
+                new_processor.select(params["fields"])
+            elif op_type == "where":
+                new_processor.where(params["condition"])
+            elif op_type == "order_by":
+                new_processor.order_by(params["field"], params["descending"])
+            elif op_type == "group_by":
+                new_processor.group_by(params["field"], params["aggregation"])
+            elif op_type == "limit":
+                new_processor.limit(params["count"])
 
         return new_processor.execute()
 
@@ -70,8 +70,13 @@ class User:
         """
         return self._query.list_queries()
 
-    def update_user_settings(self, sort_field: str = None, sort_descending: bool = False,
-                             group_field: str = None, aggregation: Dict[str, Callable] = None):
+    def update_user_settings(
+        self,
+        sort_field: Optional[str] = None,
+        sort_descending: bool = False,
+        group_field: Optional[str] = None,
+        aggregation: Optional[Dict[str, Callable]] = None,
+    ):
         """
         Обновляет настройки пользователя
         :param sort_field: атрибут сортировки
@@ -89,6 +94,6 @@ class User:
         """
         settings = self._query.get_settings()
         print(settings)
-        if not settings['group_field']:
-            self._processor.select(['Name', 'URL', 'Size'])
+        if not settings["group_field"]:
+            self._processor.select(["Name", "URL", "Size"])
         return self._processor.limit(100).execute()
