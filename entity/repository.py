@@ -2,12 +2,33 @@ from datetime import datetime
 
 
 class Repository:
-    def __init__(self, name: str, description: str, url: str, created_at: str,
-                 updated_at: str, homepage: str, size: int, stars: int, forks: int, issues: int, watchers: int,
-                 language: str,
-                 license: str, topics: list[str], has_issues: bool, has_projects: bool, has_downloads: bool,
-                 has_wiki: bool, has_pages: bool, has_discussions: bool,
-                 is_fork: bool, is_archived: bool, is_template: bool, default_branch: str):
+    def __init__(
+            self,
+            name: str,
+            description: str,
+            url: str,
+            created_at: str,
+            updated_at: str,
+            homepage: str,
+            size: int,
+            stars: int,
+            forks: int,
+            issues: int,
+            watchers: int,
+            language: str,
+            license: str,
+            topics: list[str],
+            has_issues: bool,
+            has_projects: bool,
+            has_downloads: bool,
+            has_wiki: bool,
+            has_pages: bool,
+            has_discussions: bool,
+            is_fork: bool,
+            is_archived: bool,
+            is_template: bool,
+            default_branch: str
+    ):
         self.name = name
         self.description = description
         self.url = url
@@ -32,3 +53,8 @@ class Repository:
         self.is_archived = is_archived
         self.is_template = is_template
         self.default_branch = default_branch
+
+    def __str__(self):
+        return (f'{self.name}, {self.description}, {self.url}, {self.created_at}, '
+                f'{self.updated_at}, {self.homepage}, {self.size}, {self.stars}, '
+                f'{self.forks}, {self.issues}, {self.watchers}, {self.language}')
