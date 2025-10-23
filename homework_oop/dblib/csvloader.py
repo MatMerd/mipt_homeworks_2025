@@ -35,6 +35,6 @@ class CSVLoader:
             self.header = next(reader)
             self.field_idx = {name: i for i, name in enumerate(self.header)}
             self.rows = [
-                tuple(self._auto_type(row[i], i < 2) for i in len(row))
+                tuple(self._auto_type(row[i], i < 2) for i in range(len(row)))
                 for row in reader
             ]
