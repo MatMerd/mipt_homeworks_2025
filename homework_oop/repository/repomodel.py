@@ -1,0 +1,28 @@
+from typing import Dict, Type
+
+repository_model: Dict[str, Type] = {
+    "Name": str,
+    "Description": str,
+    "URL": str,
+    "Created At": str,
+    "Updated At": str,
+    "Homepage": str,
+    "Size": int,
+    "Stars": int,
+    "Forks": int,
+    "Issues": int,
+    "Watchers": int,
+    "Language": str,
+    "License": str,
+    "Topics": str,
+    "Has Issues": bool,
+    "Has Projects": bool,
+    "Has Downloads": bool,
+    "Has Wiki": bool,
+    "Has Pages": bool,
+    "Has Discussions": bool,
+    "Is Fork": bool,
+    "Is Archived": bool,
+    "Is Template": bool,
+    "Default Branch": str,
+}
