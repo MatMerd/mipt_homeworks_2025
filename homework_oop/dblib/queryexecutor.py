@@ -41,6 +41,25 @@ class QueryExecutor:
 
         return [row for row in rows if match(row)]
 
+    def _wherecol(self, query, rows):
+        _, op, field1, field2 = query
+        idx1 = self.field_idx[field1]
+        idx2 = self.field_idx[field2]
+
+        def match(row):
+            val1 = row[idx1]
+            val2 = row[idx2]
+            if op == "==": return val1 == val2
+            if op == "<>": return val1 != val2
+            if op == "<": return val1 < val2
+            if op == "<=": return val1 <= val2
+            if op == ">": return val1 > val2
+            if op == ">=": return val1 >= val2
+            raise ValueError(f"Unknown WHERECOL op: {op}")
+        
+        return [row for row in rows if match(row)]
+
+
     def _sort(self, query, rows):
         _, order, field = query
         reverse = (order == "r")
@@ -56,6 +75,8 @@ class QueryExecutor:
                 results = self._where(query, results)
             elif qtype == "WHERELEN":
                 results = self._wherelen(query, results)
+            elif qtype == "WHERECOL":
+                results = self._wherecol(query, results)
             elif qtype == "SORT":
                 results = self._sort(query, results)
         return results
@@ -64,8 +85,9 @@ class QueryExecutor:
         PRIORITY = {
             "WHERE_INDEXED": 0,
             "WHERE": 1,
-            "WHERELEN": 2,
-            "SORT": 3
+            "WHERECOL": 2,
+            "WHERELEN": 3,
+            "SORT": 4
         }
 
         sorted_queries = []
