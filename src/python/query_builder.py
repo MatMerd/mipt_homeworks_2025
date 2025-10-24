@@ -60,6 +60,25 @@ class DataQueryBuilder:
         self.optimised = True
         return sorted(self._operations, key=optimise_order)
 
+    def _safe_grouping_key(self, item: Dict[str, Any], field: str) -> str:
+        try:
+            raw_value = item.get(field)
+            
+            if raw_value is None:
+                return "__NULL__"
+            elif isinstance(raw_value, (str, int, float, bool)):
+                return str(raw_value)
+            elif isinstance(raw_value, (list, tuple)):
+                return f"__LIST__{json.dumps(raw_value, sort_keys=True, default=str)}"
+            elif isinstance(raw_value, dict):
+                return f"__DICT__{json.dumps(raw_value, sort_keys=True, default=str)}"
+            else:
+                return str(raw_value)
+                
+        except Exception as e:
+            raise ValueError(f"Ошибка при обработке ключа группировки в записи {item}: "
+                           f"поле '{field}' = {raw_value}, ошибка: {e}") from e
+    
     def execute(self) -> QueryData:
         if not self._operations:
             self.result_data = self.original_data.copy()
@@ -79,7 +98,7 @@ class DataQueryBuilder:
             elif operation_type == 'group':
                 grouped = defaultdict(list)
                 for item in data:
-                    key = item.get(operation_data)
+                    key = self._safe_grouping_key(item, operation_data)
                     grouped[key].append(item)
                 grouped_result = dict(grouped)
 
@@ -106,3 +125,10 @@ class DataQueryBuilder:
 
     def get_headers(self) -> List[str]:
         return self.headers.copy()
+
+    def get_operations(self) -> List[tuple]:
+        return self._operations.copy()
+    
+    def set_operations(self, operations: List[tuple]) -> None:
+        self._operations = operations.copy()
+        self.optimised = False
