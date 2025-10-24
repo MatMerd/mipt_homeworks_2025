@@ -1,5 +1,5 @@
 from entity.group_type import GroupType
-from reader import Reader
+from file_manager import FileManager
 from entity.sort_type import SortType
 from sorting import Sorting
 from entity.where_type import WhereType
@@ -8,7 +8,7 @@ from user import User
 # Демо работы
 # --------------------------------------------------------------------
 # Получаем распарсенные репозитории в лист.
-repositories = Reader.read_file()
+repositories = FileManager.read_file()
 print([repository.name for repository in repositories[:10]])
 
 # Демонстрация работы User'а
@@ -34,3 +34,6 @@ history = user.get_request_history()
 print(history)
 # Получаем конкретный запрос из истории
 print(user.get_request(0))
+
+# Пишем статистику в файл
+FileManager.write_statistic(stats)
