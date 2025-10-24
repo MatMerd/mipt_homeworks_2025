@@ -1,6 +1,9 @@
+from dataclasses import asdict
+
+from .repository.repomodel import Repository
 from .statistics import RepositoryStatistics
 import json
-from typing import Dict, List, Any, Callable
+from typing import Dict, List, Callable
 
 
 class StatisticsSaver:
@@ -9,32 +12,33 @@ class StatisticsSaver:
         self.encoding = encoding
         self.history: Dict[int, List] = {}
 
-    def _save_result(
-        self, user_id: int, result: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        self.history[user_id] = result
+    def _save_result(self, user_id: int, result: List[Repository]) -> List[Repository]:
+        dict_repos = []
+        for repo in result:
+            dict_repos.append(asdict(repo))
+        self.history[user_id] = dict_repos
         return result
 
     def min(
-        self, user_id: int, data: List[Dict[str, Any]], field: str, limit: int = -1
-    ) -> List[Dict[str, Any]]:
+        self, user_id: int, data: List[Repository], field: str, limit: int = -1
+    ) -> List[Repository]:
         result = RepositoryStatistics.min(data, field, limit)
         return self._save_result(user_id, result)
 
     def max(
-        self, user_id: int, data: List[Dict[str, Any]], field: str, limit: int = -1
-    ) -> List[Dict[str, Any]]:
+        self, user_id: int, data: List[Repository], field: str, limit: int = -1
+    ) -> List[Repository]:
         result = RepositoryStatistics.max(data, field, limit)
         return self._save_result(user_id, result)
 
-    def median(self, user_id: int, data: List[Dict[str, Any]], field: str):
+    def median(self, user_id: int, data: List[Repository], field: str):
         result = RepositoryStatistics.median(data, field)
         return self._save_result(user_id, result)
 
     def select_by_predicate(
         self,
         user_id: int,
-        data: List[Dict[str, Any]],
+        data: List[Repository],
         field: str,
         predicate: Callable,
         limit: int = -1,
@@ -45,7 +49,7 @@ class StatisticsSaver:
     def selection_by_value(
         self,
         user_id: int,
-        data: List[Dict[str, Any]],
+        data: List[Repository],
         field: str,
         value: int | float,
         eps: int | float,
