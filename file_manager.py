@@ -1,5 +1,7 @@
 import csv
+import json
 from entity.repository import Repository
+from typing import Any
 
 
 class FileManager:
@@ -15,9 +17,6 @@ class FileManager:
         return repositories
 
     @staticmethod
-    def write_statistic(statistics: dict[str, str], path: str = "homework_oop/statistics.csv") -> None:
-        with open (path, "w", newline='', encoding='utf-8') as file:
-            writer = csv.writer(file)
-            writer.writerow(["Metric", "Value"])
-            writer.writerows(statistics.items())
-
+    def write_statistic(statistics: list[dict[str, Any]], path: str = "homework_oop/statistics.json") -> None:
+        with open(path, "w", encoding='utf-8') as file:
+            json.dump(statistics, file, indent=4, ensure_ascii=False, default=str)

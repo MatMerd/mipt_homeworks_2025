@@ -29,4 +29,4 @@
 ## Архитектура и распределение задач
 
 
-![](D:\Projex\mipt_homeworks_2025\Python1.png)
+![](Python1.png)
