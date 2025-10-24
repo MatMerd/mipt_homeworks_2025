@@ -57,9 +57,8 @@ class DataQueryBuilder:
         order = {'filter': 0, 'sort': 1, 'select': 2, 'group': 3}
         optimise_order = lambda op: order.get(op[0]) or -1
 
-        self._operations.sort(key=optimise_order)
         self.optimised = True
-        return self._operations
+        return sorted(self._operations, key=optimise_order)
 
     def execute(self) -> QueryData:
         if not self._operations:
