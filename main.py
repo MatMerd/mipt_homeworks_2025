@@ -114,7 +114,21 @@ class Statistics:
         return sorted(self.data, 
                      key=lambda x: int(x.get('Forks', 0)), 
                      reverse=True)[:top_n]
-    
+
+    def newest(self):
+        repos_with_years = []
+        
+        for item in self.data:
+            created_at = item.get('Created At', '')
+            if created_at and len(created_at) >= 4:
+                year_str = created_at[:4]
+                if year_str.isdigit():
+                    repos_with_years.append((item, int(year_str)))
+        
+        repos_with_years.sort(key=lambda x: (x[1], x[0]['Created At']), reverse=True)
+        return repos_with_years[0]
+
+
     def save_stats(self, filename: str, format_type: str = 'json'):
         stats = {
             'median_size': self.median_size(),
@@ -135,22 +149,3 @@ class Statistics:
                 f.write(f"most_popular_count,{stats['most_popular_count']}\n")
                 f.write(f"repos_without_language_count,{stats['repos_without_language_count']}\n")
                 f.write(f"top_commits,{';'.join(stats['top_commits'])}\n")
-
-def main():
-    read = Reader("./homework_oop/repositories.csv")
-    data = read.read()
-    proc = DataProcessor(data)
-
-    ans = proc.filter('Language', 'C++').execute()
-    # print(ans)
-
-    stats = Statistics(data)
-    print(f"Медианный размер: {stats.median_size()}")
-    print(f"Самый популярный репозиторий: {stats.most_popular()['Name']}")
-    print(f"Репозиториев без языка: {len(stats.repos_without_language())}")
-    stats.save_stats("lox")
-
-
-
-if __name__ == "__main__":
-    main()
