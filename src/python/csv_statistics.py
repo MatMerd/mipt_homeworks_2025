@@ -23,15 +23,6 @@ class StatisticsCalculator:
         self.stats[field] = median_value
         return median_value
 
-    def most_starred_repo(self) -> Optional[CSVRow]:
-        if not self.data:
-            return None
-
-        return max(self.data, key=lambda x: x.get('stars', 0))
-
-    def repos_without_language(self) -> CSVData:
-        return [record for record in self.data if not record.get('language')]
-
     def top_repos_by_field(self, field: str, limit: int = 10) -> CSVData:
         valid_data = [record for record in self.data if isinstance(record.get(field), (int, float))]
         return sorted(valid_data, key=lambda x: x.get(field, 0), reverse=True)[:limit]
@@ -79,3 +70,20 @@ class StatisticsCalculator:
 
     def clear_stats(self) -> None:
         self.stats.clear()
+
+
+class UserStatisticsCalculator(StatisticsCalculator):
+    def median_by_repository_size(self):
+        return self.median_by_field('Size')
+
+    def most_starred_repository(self) -> Optional[CSVRow]:
+        return self.top_repos_by_field('Stars', 1)[0]
+
+    def repos_without_language(self) -> CSVData:
+        return [record for record in self.data if not record.get('language')]
+
+    def mean_starts(self):
+        return self.mean_by_field('Stars')
+
+    def smallest_repository_size(self):
+        return self.field_summary('Size')['min']

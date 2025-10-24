@@ -59,10 +59,10 @@ def test_statistics():
     reader = CSVReader("../../homework_oop/repositories.csv")
     data = reader.read().get_data()
 
-    stats = StatisticsCalculator(data)
+    stats = UserStatisticsCalculator(data)
 
     median_stars = stats.median_by_field("Stars")
-    most_starred = stats.most_starred_repo()
+    most_starred = stats.most_starred_repository()
     no_language = stats.repos_without_language()
     top_10_stars = stats.top_repos_by_field("Stars", 10)
 
