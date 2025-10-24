@@ -1,0 +1,32 @@
+{
+  "total_count": 7628,
+  "median_size": 13772.0,
+  "average_size": 158648.71473518616,
+  "total_stars": 101491326,
+  "total_forks": 18307380,
+  "archived_count": 0,
+  "fork_count": 0,
+  "top_languages": [
+    [
+      "Zig",
+      2
+    ],
+    [
+      "XSLT",
+      1
+    ],
+    [
+      "Wren",
+      1
+    ],
+    [
+      "Wikitext",
+      1
+    ],
+    [
+      "WebAssembly",
+      2
+    ]
+  ],
+  "repositories_without_language": 694
+}
