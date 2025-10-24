@@ -4,6 +4,7 @@ from entity.request import Request
 from entity.sort_type import SortType
 from entity.sorting import Sorting
 from entity.where_type import WhereType
+from user import User
 
 # Демо работы написанных entity
 # --------------------------------------------------------------------
@@ -21,3 +22,7 @@ for key in Sorting.execute_request(request, repositories):
         print(repository)
     count += 1
     print()
+
+user = User('Artem')
+stats = user.process_request(request)
+print(stats)
