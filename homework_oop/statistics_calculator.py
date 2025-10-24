@@ -1,7 +1,7 @@
 import statistics
 from typing import List, Dict, Any
 
-from DataProcessor import CsvTable
+from types import CsvTable
 
 
 class StatisticsCalculator:
