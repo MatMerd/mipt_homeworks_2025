@@ -3,6 +3,7 @@ from difflib import get_close_matches
 from collections import defaultdict
 from functools import reduce
 import operator
+import json
 from .csv_reader import CSVData, CSVRow
 
 QueryData = Union[CSVData, Dict[Any, CSVData]]
