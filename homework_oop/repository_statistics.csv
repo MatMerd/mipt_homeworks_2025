@@ -1,0 +1,10 @@
+Metric,Value
+median_repo_size,23423.0
+most_starred_repo.Name,public-apis
+most_starred_repo.URL,https://github.com/public-apis/public-apis
+most_starred_repo.Stars,256615
+most_starred_repo.Issues,191
+most_starred_repo.Size,5088
+most_starred_repo.Language,Python
+avg_issues_count,1051.0
+get_percentage_of_repos_without_language,0.0
