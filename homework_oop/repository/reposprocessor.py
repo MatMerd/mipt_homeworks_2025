@@ -8,41 +8,43 @@ from homework_oop.statistics_saver import StatisticsSaver
 
 
 class ReposProcessor:
-    @staticmethod
+    def __init__(self, stats_saver: StatisticsSaver):
+        self.stats_saver = stats_saver
+
     def execute(
-        data: List[Repository], user_id: int, query: Query
+        self, data: List[Repository], user_id: int, query: Query
     ) -> Dict[Any, List[Repository]]:
         result: List[Repository] = copy.copy(data)
         if query.filters:
-            result = ReposProcessor._apply_filters(result, query.filters)
+            result = self._apply_filters(result, query.filters)
 
         if query.sort_by:
-            result = ReposProcessor._apply_sorting(result, query.sort_by)
+            result = self._apply_sorting(result, query.sort_by)
 
-        ReposProcessor._calc_stats(copy.copy(result), user_id)
+        self._calc_stats(copy.copy(result), user_id)
 
         if query.group_by:
-            return ReposProcessor._apply_grouping(result, query.group_by)
+            return self._apply_grouping(result, query.group_by)
         else:
             return {"": result}
 
-    @staticmethod
-    def _calc_stats(repos: List[Repository], user_id: int) -> List[List[Repository]]:
-        statistics_saver: StatisticsSaver = StatisticsSaver("user_stats.json")
-        size_results: List[Repository] = statistics_saver.median(user_id, repos, "Size")
-        max_liked: List[Repository] = statistics_saver.max(
+    def _calc_stats(
+        self, repos: List[Repository], user_id: int
+    ) -> List[List[Repository]]:
+        size_results: List[Repository] = self.stats_saver.median(user_id, repos, "Size")
+        max_liked: List[Repository] = self.stats_saver.max(
             user_id, repos, "Stars", limit=1
         )
-        no_lang_repos: List[Repository] = statistics_saver.select_by_predicate(
+        no_lang_repos: List[Repository] = self.stats_saver.select_by_predicate(
             user_id, repos, "Language", lambda x: x == ""
         )
-        max_watchers_repos: List[Repository] = statistics_saver.max(
+        max_watchers_repos: List[Repository] = self.stats_saver.max(
             user_id, repos, "Watchers", limit=10
         )
-        archived_repos: List[Repository] = statistics_saver.select_by_predicate(
+        archived_repos: List[Repository] = self.stats_saver.select_by_predicate(
             user_id, repos, "Is_Archived", lambda x: x, limit=10
         )
-        statistics_saver.save()
+        self.stats_saver.save()
         return [
             size_results,
             max_liked,
@@ -51,9 +53,8 @@ class ReposProcessor:
             archived_repos,
         ]
 
-    @staticmethod
     def _apply_filters(
-        repos: List[Repository], filters: Dict[str, Any]
+        self, repos: List[Repository], filters: Dict[str, Any]
     ) -> List[Repository]:
         try:
             filtered = repos
@@ -65,8 +66,7 @@ class ReposProcessor:
         except Exception as e:
             raise FilterError(filters, e)
 
-    @staticmethod
-    def _apply_sorting(repos: List[Repository], sort_by: str) -> List[Repository]:
+    def _apply_sorting(self, repos: List[Repository], sort_by: str) -> List[Repository]:
         try:
             if not repos or sort_by is None:
                 return repos
@@ -75,9 +75,8 @@ class ReposProcessor:
         except Exception as e:
             raise SortingError(sort_by, e)
 
-    @staticmethod
     def _apply_grouping(
-        repos: List[Repository], group_by: str
+        self, repos: List[Repository], group_by: str
     ) -> Dict[Any, List[Repository]]:
         try:
             if group_by is None:

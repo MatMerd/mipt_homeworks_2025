@@ -4,6 +4,7 @@ from homework_oop.reader import ReaderCSV
 from homework_oop.repository.query import Query
 from homework_oop.repository.repomodel import repository_model, Repository
 from homework_oop.repository.reposprocessor import ReposProcessor
+from homework_oop.statistics_saver import StatisticsSaver
 
 
 def read_repos() -> List[Repository]:
@@ -43,8 +44,11 @@ def read_repos() -> List[Repository]:
 
 def main():
     repos: List[Repository] = read_repos()
-    query: Query = Query(sort_by='Size', filters= {'Language': 'TypeScript'})
-    res: Dict[Any, List[Repository]] = ReposProcessor.execute(repos, 1, query)
+    query: Query = Query(sort_by='Size', filters= {'Language': 'TypeScript'}, group_by="default_branch")
+    stats_saver: StatisticsSaver = StatisticsSaver("user_stats.json")
+    repos_processor = ReposProcessor(stats_saver)
+    user_id: int = 1
+    res: Dict[Any, List[Repository]] = repos_processor.execute(repos, user_id, query)
     print(res)
     print("Hello from mipt-homeworks-2025!")
 
