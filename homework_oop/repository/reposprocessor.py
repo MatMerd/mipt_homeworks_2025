@@ -3,7 +3,7 @@ import copy
 
 from homework_oop.repository.query import Query
 from homework_oop.repository.errors import FilterError, SortingError, GroupingError
-from homework_oop.statistics import RepositoryStatistics
+from homework_oop.statistics_saver import StatisticsSaver
 
 
 class ReposProcessor:
@@ -28,18 +28,22 @@ class ReposProcessor:
             return {"": result}
 
     def _calc_stats(self, repos: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
-        size_results: List[Dict[str, Any]] = RepositoryStatistics.median(repos, "Size")
-        max_liked: List[Dict[str, Any]] = RepositoryStatistics.max(
-            repos, "Stars", limit=1
+        statistics_saver: StatisticsSaver = StatisticsSaver("user_stats.json")
+        size_results: List[Dict[str, Any]] = statistics_saver.median(
+            self.user_id, repos, "Size"
         )
-        no_lang_repos: List[Dict[str, Any]] = RepositoryStatistics.select_by_predicate(
-            repos, "Language", lambda x: x == ""
+        max_liked: List[Dict[str, Any]] = statistics_saver.max(
+            self.user_id, repos, "Stars", limit=1
         )
-        max_watchers_repos: List[Dict[str, Any]] = RepositoryStatistics.max(
-            repos, "Watchers", limit=10
+        statistics_saver.save()
+        no_lang_repos: List[Dict[str, Any]] = statistics_saver.select_by_predicate(
+            self.user_id, repos, "Language", lambda x: x == ""
         )
-        archived_repos: List[Dict[str, Any]] = RepositoryStatistics.select_by_predicate(
-            repos, "Is Archived", lambda x: x
+        max_watchers_repos: List[Dict[str, Any]] = statistics_saver.max(
+            self.user_id, repos, "Watchers", limit=10
+        )
+        archived_repos: List[Dict[str, Any]] = statistics_saver.select_by_predicate(
+            self.user_id, repos, "Is Archived", lambda x: x, limit=10
         )
         return [
             size_results,

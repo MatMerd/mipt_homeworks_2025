@@ -1,12 +1,10 @@
-from typing import Any, Optional
+from typing import Optional
 
 from homework_oop.repository.query import Query
 
 
 class FilterError(Exception):
-    def __init__(
-        self, query: Query, value: Any, original_error: Optional[Exception] = None
-    ):
+    def __init__(self, query: Query, original_error: Optional[Exception] = None):
         super().__init__(f"Filter error for query {query}")
         self.__cause__ = original_error
 
