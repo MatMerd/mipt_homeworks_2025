@@ -16,10 +16,12 @@ class StatisticsCalculator:
         ]
 
         if not values:
-            self.stats[field] = None
             return None
 
-        median_value = statistics.median(values)
+        return statistics.median(values)
+
+    def median_by_field_and_save(self, field: str) -> Optional[float]:
+        median_value = self.median_by_field(field)
         self.stats[field] = median_value
         return median_value
 
@@ -77,10 +79,11 @@ class UserStatisticsCalculator(StatisticsCalculator):
         return self.median_by_field('Size')
 
     def most_starred_repository(self) -> Optional[CSVRow]:
-        return self.top_repos_by_field('Stars', 1)[0]
+        top_repos = self.top_repos_by_field('Stars', 1)
+        return top_repos[0] if top_repos else None
 
     def repos_without_language(self) -> CSVData:
-        return [record for record in self.data if not record.get('language')]
+        return [record for record in self.data if not record.get('Language')]
 
     def mean_starts(self):
         return self.mean_by_field('Stars')
