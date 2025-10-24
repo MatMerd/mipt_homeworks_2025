@@ -15,15 +15,15 @@ class User:
         return builder
 
     def save_query(self, query_name: str, builder: DataQueryBuilder) -> None:
-        operations = getattr(builder, '_operations', list())
-        self.saved_queries[query_name] = operations.copy()
+        operations = builder.get_operations()
+        self.saved_queries[query_name] = operations
 
     def execute_saved_query(self, query_name: str) -> Any:
         if query_name not in self.saved_queries:
             raise KeyError(f"Сохраненный запрос '{query_name}' не найден")
 
         builder = DataQueryBuilder(self.data, self.headers)
-        builder._operations = self.saved_queries[query_name].copy()
+        builder.set_operations(self.saved_queries[query_name])
         return builder.execute()
 
     def get_saved_query_names(self) -> List[str]:
