@@ -8,7 +8,7 @@ from entity.where_type import WhereType
 class Sorting:
 
     @staticmethod
-    def where(predicates: dict[WhereType, str], repositories: list[Repository]) -> list[Repository]:
+    def __where(predicates: dict[WhereType, str], repositories: list[Repository]) -> list[Repository]:
         result = []
         for repository in repositories:
             flag = True
@@ -22,14 +22,14 @@ class Sorting:
         return result
 
     @staticmethod
-    def group(predicates: set[GroupType], repositories: list[Repository]) -> list[list[Repository]]:
+    def __group(predicates: set[GroupType], repositories: list[Repository]) -> list[list[Repository]]:
         cnt = {}
         for repository in repositories:
             current_fields = {}
             for predicate in predicates:
                 value = getattr(repository, predicate.name.lower())
                 current_fields[predicate] = value
-            key = Sorting.dict_to_key(current_fields)
+            key = Sorting.__dict_to_key(current_fields)
             if key not in cnt:
                 cnt[key] = []
             cnt[key].append(repository)
@@ -39,24 +39,24 @@ class Sorting:
         return result
 
     @staticmethod
-    def sort(predicates: list[SortType], bag_repositories: list[list[Repository]]) -> list[list[Repository]]:
+    def __sort(predicates: list[SortType], bag_repositories: list[list[Repository]]) -> list[list[Repository]]:
         result = []
         for repositories in bag_repositories:
-            sorted_repositories = sorted(repositories, key=lambda repo: Sorting.get_sort_key(repo, predicates))
+            sorted_repositories = sorted(repositories, key=lambda repo: Sorting.__get_sort_key(repo, predicates))
             result.append(sorted_repositories)
         return result
 
     @staticmethod
-    def get_sort_key(repository, predicates: list[SortType]):
+    def __get_sort_key(repository, predicates: list[SortType]):
         return tuple(getattr(repository, field.name.lower()) for field in predicates)
 
     @staticmethod
-    def dict_to_key(d: dict[GroupType, str]) -> tuple:
+    def __dict_to_key(d: dict[GroupType, str]) -> tuple:
         return tuple(sorted(d.items()))
 
     @staticmethod
     def execute_request(request: Request, repositories: list[Repository]) -> list[list[Repository]]:
-        repositories = Sorting.where(request.where_by, repositories)
-        repositories = Sorting.group(request.group_by, repositories)
-        repositories = Sorting.sort(request.sort_by, repositories)
+        repositories = Sorting.__where(request.where_by, repositories)
+        repositories = Sorting.__group(request.group_by, repositories)
+        repositories = Sorting.__sort(request.sort_by, repositories)
         return repositories
