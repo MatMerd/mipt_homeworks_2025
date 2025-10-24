@@ -1,0 +1,18 @@
+{
+  "median_size": 2389,
+  "most_popular_repo": "freeCodeCamp",
+  "most_popular_count": 374074,
+  "repos_without_language_count": 16076,
+  "top_commits": [
+    "datasharing",
+    "ProgrammingAssignment2",
+    "Spoon-Knife",
+    "SmartThingsPublic",
+    "tensorflow",
+    "gitignore",
+    "Complete-Python-3-Bootcamp",
+    "bootstrap",
+    "cgm-remote-monitor",
+    "coding-interview-university"
+  ]
+}
