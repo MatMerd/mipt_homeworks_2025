@@ -54,8 +54,9 @@ class Sorting:
     def dict_to_key(d: dict[GroupType, str]) -> tuple:
         return tuple(sorted(d.items()))
 
-    def execute(self, request: Request, repositories: list[Repository]) -> list[list[Repository]]:
-        repositories = self.where(request.where_by, repositories)
-        repositories = self.group(request.group_by, repositories)
-        repositories = self.sort(request.sort_by, repositories)
+    @staticmethod
+    def execute_request(request: Request, repositories: list[Repository]) -> list[list[Repository]]:
+        repositories = Sorting.where(request.where_by, repositories)
+        repositories = Sorting.group(request.group_by, repositories)
+        repositories = Sorting.sort(request.sort_by, repositories)
         return repositories

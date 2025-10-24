@@ -16,7 +16,7 @@ request = Request([SortType.NAME, SortType.NAME, SortType.SIZE], {GroupType.HAS_
 
 sorting = Sorting()
 count = 0
-for key in sorting.execute(request, repositories):
+for key in sorting.execute_request(request, repositories):
     print(f"The {count}th repositories bag!")
     for repository in key:
         print(repository)
