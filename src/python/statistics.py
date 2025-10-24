@@ -1,0 +1,81 @@
+from typing import List, Dict, Any, Optional, Union
+import statistics
+from collections import Counter
+from .csv_reader import CSVData, CSVRow
+
+
+class StatisticsCalculator:
+    def __init__(self, data: CSVData):
+        self.data = data
+        self.stats: CSVRow = dict()
+
+    def median_by_field(self, field: str) -> Optional[float]:
+        values = [
+            record[field] for record in self.data
+            if isinstance(record.get(field), (int, float)) and record[field] is not None
+        ]
+
+        if not values:
+            self.stats[field] = None
+            return None
+
+        median_value = statistics.median(values)
+        self.stats[field] = median_value
+        return median_value
+
+    def most_starred_repo(self) -> Optional[CSVRow]:
+        if not self.data:
+            return None
+
+        return max(self.data, key=lambda x: x.get('stars', 0))
+
+    def repos_without_language(self) -> CSVData:
+        return [record for record in self.data if not record.get('language')]
+
+    def top_repos_by_field(self, field: str, limit: int = 10) -> CSVData:
+        valid_data = [record for record in self.data if isinstance(record.get(field), (int, float))]
+        return sorted(valid_data, key=lambda x: x.get(field, 0), reverse=True)[:limit]
+
+    def mean_by_field(self, field: str) -> Optional[float]:
+        values = [
+            record[field] for record in self.data
+            if isinstance(record.get(field), (int, float)) and record[field] is not None
+        ]
+
+        if not values:
+            return None
+
+        return statistics.mean(values)
+
+    def count_by_field(self, field: str) -> CSVRow:
+        counter = Counter(record.get(field) for record in self.data)
+        return dict(counter)
+
+    def field_summary(self, field: str) -> CSVRow:
+        values = [
+            record[field] for record in self.data
+            if isinstance(record.get(field), (int, float)) and record[field] is not None
+        ]
+
+        if not values:
+            return {
+                'count': 0,
+                'min': None,
+                'max': None,
+                'mean': None,
+                'median': None
+            }
+
+        return {
+            'count': len(values),
+            'min': min(values),
+            'max': max(values),
+            'mean': statistics.mean(values),
+            'median': statistics.median(values)
+        }
+
+    def get_stats(self) -> CSVRow:
+        return self.stats.copy()
+
+    def clear_stats(self) -> None:
+        self.stats.clear()
