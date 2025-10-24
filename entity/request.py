@@ -13,3 +13,6 @@ class Request:
         self.sort_by = sort_by
         self.group_by = group_by
         self.where_by = where_by
+
+    def __repr__(self):
+        return f'{self.sort_by}, {self.group_by}, {self.where_by}'

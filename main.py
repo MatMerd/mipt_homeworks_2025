@@ -1,20 +1,23 @@
 from entity.group_type import GroupType
-from entity.reader import Reader
-from entity.request import Request
+from reader import Reader
 from entity.sort_type import SortType
-from entity.sorting import Sorting
+from sorting import Sorting
 from entity.where_type import WhereType
 from user import User
 
-# Демо работы написанных entity
+# Демо работы
 # --------------------------------------------------------------------
 # Получаем распарсенные репозитории в лист.
 repositories = Reader.read_file()
 print([repository.name for repository in repositories[:10]])
-# Создаем экземпляр запроса с несколькими полями для сортировки и полем для группировки
-request = Request([SortType.NAME, SortType.NAME, SortType.SIZE], {GroupType.HAS_PROJECTS},
-                  {WhereType.NAME: "awesome", WhereType.LICENSE: "CC0-1.0"})
 
+# Демонстрация работы User'а
+user = User('Artem')
+# Создаем экземпляр запроса с несколькими полями для сортировки и полем для группировки
+request = user.create_request([SortType.NAME, SortType.NAME, SortType.SIZE], {GroupType.HAS_PROJECTS},
+                              {WhereType.NAME: "awesome", WhereType.LICENSE: "CC0-1.0"})
+
+# Сортируем репозитории по запросу
 count = 0
 for key in Sorting.execute_request(request, repositories):
     print(f"The {count}th repositories bag!")
@@ -23,6 +26,11 @@ for key in Sorting.execute_request(request, repositories):
     count += 1
     print()
 
-user = User('Artem')
-stats = user.process_request(request)
+# Получаем статистику
+stats = user.process_request(request, repositories)
 print(stats)
+# Получаем историю запросов
+history = user.get_request_history()
+print(history)
+# Получаем конкретный запрос из истории
+print(user.get_request(0))

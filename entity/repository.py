@@ -54,7 +54,7 @@ class Repository:
         self.is_template = is_template
         self.default_branch = default_branch
 
-    def __str__(self):
+    def __repr__(self):
         return (f'{self.name}, {self.description}, {self.url}, {self.created_at}, '
                 f'{self.updated_at}, {self.homepage}, {self.size}, {self.stars}, '
                 f'{self.forks}, {self.issues}, {self.watchers}, {self.language}')

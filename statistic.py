@@ -47,7 +47,7 @@ class Statistic:
     @staticmethod
     def __get_language_statistics(repositories: list[Repository]) -> dict[str, int]:
         languages = [
-            repo.language if repo.language is not None else 'Unknown'
+            repo.language if repo.language != '' else 'Unknown'
             for repo in repositories
         ]
 
