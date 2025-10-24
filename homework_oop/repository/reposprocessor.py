@@ -3,67 +3,91 @@ import copy
 
 from homework_oop.repository.query import Query
 from homework_oop.repository.errors import FilterError, SortingError, GroupingError
+from homework_oop.repository.repomodel import Repository
+from homework_oop.statistics_saver import StatisticsSaver
 
 
 class ReposProcessor:
-    def __init__(self, data: List[Dict[str, Any]], user_id: int, query: Query):
-        self.data = data
-        self.user_id = user_id
-        self.query = query
+    @staticmethod
+    def execute(
+        data: List[Repository], user_id: int, query: Query
+    ) -> Dict[Any, List[Repository]]:
+        result: List[Repository] = copy.copy(data)
+        if query.filters:
+            result = ReposProcessor._apply_filters(result, query.filters)
 
-    def execute(self) -> Dict[Any, List[Dict[str, Any]]]:
-        result: List[Dict[str, Any]] = copy.copy(self.data)
-        if self.query.filters:
-            result = self._apply_filters(result)
+        if query.sort_by:
+            result = ReposProcessor._apply_sorting(result, query.sort_by)
 
-        if self.query.sort_by:
-            result = self._apply_sorting(result)
+        ReposProcessor._calc_stats(copy.copy(result), user_id)
 
-        if self.query.group_by:
-            return self._apply_grouping(result)
+        if query.group_by:
+            return ReposProcessor._apply_grouping(result, query.group_by)
         else:
             return {"": result}
 
-    def _apply_filters(self, repos: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    @staticmethod
+    def _calc_stats(repos: List[Repository], user_id: int) -> List[List[Repository]]:
+        statistics_saver: StatisticsSaver = StatisticsSaver("user_stats.json")
+        size_results: List[Repository] = statistics_saver.median(user_id, repos, "Size")
+        max_liked: List[Repository] = statistics_saver.max(
+            user_id, repos, "Stars", limit=1
+        )
+        no_lang_repos: List[Repository] = statistics_saver.select_by_predicate(
+            user_id, repos, "Language", lambda x: x == ""
+        )
+        max_watchers_repos: List[Repository] = statistics_saver.max(
+            user_id, repos, "Watchers", limit=10
+        )
+        archived_repos: List[Repository] = statistics_saver.select_by_predicate(
+            user_id, repos, "Is_Archived", lambda x: x, limit=10
+        )
+        statistics_saver.save()
+        return [
+            size_results,
+            max_liked,
+            no_lang_repos,
+            max_watchers_repos,
+            archived_repos,
+        ]
+
+    @staticmethod
+    def _apply_filters(
+        repos: List[Repository], filters: Dict[str, Any]
+    ) -> List[Repository]:
         try:
             filtered = repos
-            if self.query.filters is None:
+            if filters is None:
                 return repos
-            for field, value in self.query.filters.items():
-                filtered = [repo for repo in filtered if repo.get(field) == value]
+            for field, value in filters.items():
+                filtered = [repo for repo in filtered if repo.get_field(field) == value]
             return filtered
         except Exception as e:
-            raise FilterError(self.query, e)
+            raise FilterError(filters, e)
 
-    def _apply_sorting(self, repos: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    @staticmethod
+    def _apply_sorting(repos: List[Repository], sort_by: str) -> List[Repository]:
         try:
-            if not repos or self.query.sort_by is None:
+            if not repos or sort_by is None:
                 return repos
-            field_value = repos[0].get(self.query.sort_by)
 
-            sort_field = self.query.sort_by
-
-            if isinstance(field_value, (bool, int, float)):
-                return sorted(
-                    repos, key=lambda x: float(x.get(sort_field, 0)), reverse=True
-                )
-            else:
-                return sorted(repos, key=lambda x: str(x.get(sort_field, "")))
+            return sorted(repos, key=lambda x: x.get_field(sort_by))
         except Exception as e:
-            raise SortingError(self.query.sort_by, e)
+            raise SortingError(sort_by, e)
 
+    @staticmethod
     def _apply_grouping(
-        self, repos: List[Dict[str, Any]]
-    ) -> Dict[Any, List[Dict[str, Any]]]:
+        repos: List[Repository], group_by: str
+    ) -> Dict[Any, List[Repository]]:
         try:
-            if self.query.group_by is None:
+            if group_by is None:
                 return {"": repos}
-            groups: Dict[Any, List[Dict[str, Any]]] = {}
+            groups: Dict[Any, List[Repository]] = {}
             for repo in repos:
-                value: Any = repo[self.query.group_by]
+                value: Any = repo.get_field(group_by)
                 if value not in groups:
                     groups[value] = []
                 groups[value].append(repo)
             return groups
         except Exception as e:
-            raise GroupingError(self.query.group_by, e)
+            raise GroupingError(group_by, e)
