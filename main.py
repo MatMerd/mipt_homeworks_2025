@@ -1,27 +1,23 @@
 from homework_oop.CSVReader import CSVReader
 from homework_oop.DataProcessor import DataProcessor
-from homework_oop.User import User
+from homework_oop.StatisticProcessor import StatisticsProcessor
+
 
 DATA_PATH = "homework_oop/repositories.csv"
 
 def main():
     repositories = CSVReader(DATA_PATH).read()
     processor = DataProcessor(repositories)
-    
-    user = User("Nick")
-    
-    user.save_sort("Top by stars", ('Stars', True))
-    user.save_group("Group by Language", 'Language')
 
-    top_sorted = user.execute_sort("Top by stars", processor)
-    print("Top by stars")
-    for repo in top_sorted[:3]:
-        print(f"{repo['Name']} — {repo['Stars']}")
-        
-    grouped = user.execute_group("Group by Language", processor, clean_execution=True)
-    print("\nGroup by Language")
-    for lang, repos in grouped.items():
-        print(f"{lang}: {len(repos)}")
+    stats = StatisticsProcessor(processor)
 
+    print("Медиана по размеру:", stats.median_repository_size())
+    print("Самый залайканный:", stats.most_starred_repository().get('Name'))
+    print("Репозиториев без языка:", len(stats.repositories_without_language()))
+    processor.reset()
+    print("Топ-10 по форкам:", [r['Name'] for r in stats.top_repositories_by_forks()])
+    processor.reset()
+    print("Средние звёзды по языкам:", stats.average_stars_by_language())
+    
 if __name__ == "__main__":
     main()
