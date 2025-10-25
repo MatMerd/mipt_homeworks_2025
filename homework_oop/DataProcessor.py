@@ -2,8 +2,7 @@ import typing
 from dataclasses import dataclass, field
 import functools
 
-CsvRow: typing.TypeAlias = dict[str, object]
-CsvTable: typing.TypeAlias = list[CsvRow]
+from types import CsvRow, CsvTable
 
 ProcessingResult: typing.TypeAlias = CsvTable | dict[object, CsvTable]
 
