@@ -1,18 +1,29 @@
-
-from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
-import json
-import csv
-import os
+
+from homework_oop.repository.query import Query
+from homework_oop.repository.repomodel import Repository
+from homework_oop.repository.reposprocessor import ReposProcessor
+
+
+class UserNotFoundError(Exception):
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
+class QueryValidationError(Exception):
+    def __init__(self, message: str):
+        super().__init__(message)
+
 
 class User:
-    _all_users: Dict[int, 'User'] = {}
+    _all_users: Dict[int, "User"] = {}
     _next_id: int = 1
 
-    def __init__(self, user_id: Optional[int] = None):
+    def __init__(self, repo_proc: ReposProcessor, user_id: Optional[int] = None):
         if user_id is None:
             self.id = User._next_id
             User._next_id += 1
+            self.repo_proc = repo_proc
         else:
             self.id = user_id
             if user_id in User._all_users:
@@ -21,30 +32,38 @@ class User:
         User._all_users[self.id] = self
 
     @classmethod
-    def get_user(cls, user_id: int) -> 'User':
+    def get_user(cls, user_id: int) -> "User":
         if user_id not in cls._all_users:
             raise UserNotFoundError(f"Пользователь с ID {user_id} не найден.")
         return cls._all_users[user_id]
 
     def save_query(self, query_name: str, query: Query) -> None:
         if not isinstance(query, Query):
-            raise QueryValidationError("Аргумент 'query' должен быть экземпляром класса Query.")
+            raise QueryValidationError(
+                "Аргумент 'query' должен быть экземпляром класса Query."
+            )
 
         if query_name in self.saved_queries:
-            raise QueryValidationError(f"Запрос с именем '{query_name}' уже существует. Выберите другое имя.")
+            raise QueryValidationError(
+                f"Запрос с именем '{query_name}' уже существует. Выберите другое имя."
+            )
 
         self.saved_queries[query_name] = query
         print(f"Запрос '{query_name}' успешно сохранён для пользователя {self.id}.")
 
-    def execute_query(self, data: List[Dict[str, Any]], query: Query) -> List[Dict[str, Any]]:
-        repos_query = RepsQuery(data, query, self.id)
-        result_data = repos_query.execute()
+    def execute_query(
+        self, data: List[Repository], query: Query
+    ) -> dict[Any, list[Repository]]:
+        result_data = self.repo_proc.execute(data, self.id, query)
         return result_data
 
-    def execute_saved_query(self, data: List[Dict[str, Any]], query_name: str) -> List[Dict[str, Any]]:
+    def execute_saved_query(
+        self, data: List[Repository], query_name: str
+    ) -> dict[Any, list[Repository]]:
         if query_name not in self.saved_queries:
-            raise QueryValidationError(f"Сохранённый запрос '{query_name}' не найден для пользователя {self.id}.")
-
+            raise QueryValidationError(
+                f"Сохранённый запрос '{query_name}' не найден для пользователя {self.id}."
+            )
         query = self.saved_queries[query_name]
         return self.execute_query(data, query)
 
@@ -53,7 +72,9 @@ class User:
 
     def delete_saved_query(self, query_name: str) -> None:
         if query_name not in self.saved_queries:
-            raise QueryValidationError(f"Сохранённый запрос '{query_name}' не найден для пользователя {self.id}.")
+            raise QueryValidationError(
+                f"Сохранённый запрос '{query_name}' не найден для пользователя {self.id}."
+            )
 
         del self.saved_queries[query_name]
         print(f"Запрос '{query_name}' успешно удалён для пользователя {self.id}.")
