@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-import statistics
+import statistics, json
 from homework_oop.DataProcessor import DataProcessor
 
 class StatisticsProcessor():
@@ -31,3 +31,8 @@ class StatisticsProcessor():
             if stars:
                 result[language or 'Unknown'] = round(sum(stars) / len(stars), 2)
         return result
+    
+    def save_to_json(self, data: Any, filename: str) -> None:
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+        print(f"Данные сохранены в файл: {filename}")

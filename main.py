@@ -19,5 +19,8 @@ def main():
     processor.reset()
     print("Средние звёзды по языкам:", stats.average_stars_by_language())
     
+    processor.reset()
+    stats.save_to_json(stats.top_repositories_by_forks(), 'homework_oop/top_forks.json')
+    
 if __name__ == "__main__":
     main()
