@@ -6,6 +6,9 @@ import copy as _copy
 import ast
 import sys
 from typing import TextIO
+import random
+import datetime
+
 
 class Vector:
     def __init__(self, elements: Sequence[Any] | None = None, dtype_=object):
@@ -108,11 +111,13 @@ class Vector:
 
 class ReadCSV:  # Vector(np.array(object))
     def __init__(self, filename: str | None = None):
+        if filename is None:
+            return
+
         self.translate: dict[str, int] = {}
         self.table: Vector = Vector()  # TODO: менять размер в open и setCSVFILE.
         self.re_translate: Vector = Vector()
-        if filename is None:
-            return
+
         with open(filename) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             for line_index, row in enumerate(csv_reader):
@@ -125,6 +130,7 @@ class ReadCSV:  # Vector(np.array(object))
                 for i, el in enumerate(row):
                     massive[i] = el
                 self.table.append(massive)
+
         self._cast_columns_inplace()
 
     def setCSVFile(self, filename: str) -> None:
@@ -292,7 +298,7 @@ class GroupingAndSorting:
             read_csv = operation(read_csv)
         return read_csv
 
-NAME_EXISTS = "The name is already exists"
+NAME_EXISTS = "This name is already exists"
 RANDOM_NAMES = ["Patrick Star", "SpongeBob SquarePants", "Squidward Tentacles", "Eugene H. Krabs", "Sheldon J. Plankton",
                 "Karen Plankton", "Sandy Cheeks", "Mrs. Puff", "Pearl Krabs", "Gary the Snail", "Patchy the Pirate",
                 "Potty the Parrot", "Mermaid Man", "Barnacle Boy", "The Flying Dutchman", "Larry the Lobster"]
@@ -337,6 +343,10 @@ INCORRECT_PATH = "Incorrect path provided."
 INCORRECT_TRANSITION = "Incorrect transition."
 
 UNKNOWN_COMMAND = "I'm sorry, I couldn't understand the command."
+
+INCORRECT_DIRECTORY = "Incorrect directory for creating a new user."
+
+INVALID_PREFIX = "I'm sorry, but the username cannot begin with the characters . or /"
 
 def write_into(output: TextIO | None = sys.stdout, user_name: str | None = "sudo", prefix: str | None = "") -> None:
     if output is None:
@@ -428,7 +438,9 @@ def terminal(inp: TextIO = sys.stdin, output: TextIO = sys.stdout) -> None:
             if not flag:
                 prefix = INCORRECT_PATH
             elif norm_path[:position] == "/":
-                all_user_name: str = norm_path[position:] + " ".join(all_commands[2:])
+                all_user_name: str = norm_path[position:]
+                if len(all_commands) > 2:
+                    all_user_name += " " + " ".join(all_commands[2:])
                 if all_user_name == "":
                     user_now = ""
                 elif all_user_name not in all_users:
@@ -436,7 +448,9 @@ def terminal(inp: TextIO = sys.stdin, output: TextIO = sys.stdout) -> None:
                 else:
                     user_now = all_user_name
             elif len(norm_path[:position]) >= 2 and norm_path[:position] != "./":
-                all_user_name: str = norm_path[position:] + " ".join(all_commands[2:])
+                all_user_name: str = norm_path[position:]
+                if len(all_commands) > 2:
+                    all_user_name += " " + " ".join(all_commands[2:])
                 if all_user_name == "":
                     user_now = ""
                 elif all_user_name == "" or all_user_name not in all_users:
@@ -444,7 +458,9 @@ def terminal(inp: TextIO = sys.stdin, output: TextIO = sys.stdout) -> None:
                 else:
                     user_now = all_user_name
             elif position == 0 or (norm_path[:position] == "./" and len(norm_path) > 2):
-                all_user_name: str = norm_path + " ".join(all_commands[2:])
+                all_user_name: str = norm_path
+                if len(all_commands) > 2:
+                    all_user_name += " " + " ".join(all_commands[2:])
                 if user_now != "":
                     prefix = INCORRECT_TRANSITION
                 elif all_user_name not in all_users:
@@ -455,7 +471,24 @@ def terminal(inp: TextIO = sys.stdin, output: TextIO = sys.stdout) -> None:
                 prefix = UNKNOWN_COMMAND
         elif all_commands[0].lower() == "add":
             if all_commands[1].lower() == "user":
+                all_user_name: str = " ".join(all_commands[2:])
+                if user_now != "":
+                    prefix = INCORRECT_DIRECTORY
+                elif all_user_name in all_users:
+                    prefix = NAME_EXISTS
+                else:
+                    if all_user_name == "":
+                        all_user_name = RANDOM_NAMES[random.randint(0, len(RANDOM_NAMES) - 1)] + datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
+                    if all_user_name[0] == "." or all_user_name[0] == "/":
+                        prefix = INVALID_PREFIX
+                    else:
+                        all_users[all_user_name] = User()
+                        prefix = f"Add new user {all_user_name}"
+            elif all_commands[1].lower() == "csv":
                 pass
+
+
+
 
 
 
