@@ -52,8 +52,8 @@ class Vector:
         self.data[position] = value
 
     def __iter__(self):
-        for it in range(self.size):
-            yield self.data[it]
+        for position in range(self.size):
+            yield self.data[position]
 
     def __str__(self) -> str:
         return "[" + ", ".join(str(self.data[position]) for position in range(self.size)) + "]"
@@ -108,13 +108,11 @@ class Vector:
 
 class ReadCSV:  # Vector(np.array(object))
     def __init__(self, filename: str | None = None):
-        if filename is None:
-            return
-
         self.translate: dict[str, int] = {}
         self.table: Vector = Vector()  # TODO: менять размер в open и setCSVFILE.
         self.re_translate: Vector = Vector()
-
+        if filename is None:
+            return
         with open(filename) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             for line_index, row in enumerate(csv_reader):
@@ -127,10 +125,7 @@ class ReadCSV:  # Vector(np.array(object))
                 for i, el in enumerate(row):
                     massive[i] = el
                 self.table.append(massive)
-        
         self._cast_columns_inplace()
-
-
 
     def setCSVFile(self, filename: str) -> None:
         self.translate = {}
@@ -228,7 +223,6 @@ class ReadCSV:  # Vector(np.array(object))
             casted_col: list[Any] = ReadCSV.convert_to_common_type(raw_col)
             for row in range(num_rows):
                 self.table[row][col] = casted_col[row]
-
 
 def python_sort_column(csv: ReadCSV, column_number_: int | str | None) -> ReadCSV | None:
     new_csv: ReadCSV = ReadCSV()
@@ -330,171 +324,25 @@ class User:
             return None
         return list(self.all_csv.keys())
 
+documentation_path = "./documentation.txt"
 
 PROMPT = ">>> "
 
 GREETINGS = """Hello! What would you like to do?\n(You can try command \"documentation\")"""
-DOCUMENTATION = DOCUMENTATION = r"""
-CSV Shell — a tiny console for working with CSV files
 
-What this shell does
---------------------
-This utility lets you:
-• create lightweight “users” (data containers),
-• attach any number of CSV files to each user,
-• inspect what’s already attached,
-• (soon) run table operations: sort by column, take head/tail, compute median by column, pick top-K by a metric, group & aggregate, filter, etc.
+USER_NAME_NOT_EXISTS = "A user with that name does not exist."
 
-Data model (quick overview)
----------------------------
-• Contexts:
-  – (./)          — root; no user is selected.
-  – (./<user>)    — inside a user’s namespace.
-• Each user stores a dictionary of CSV tables: {csv_name: ReadCSV}.
-• ReadCSV:
-  – the first row of a CSV is treated as the header (column names);
-  – `translate: dict[str, int]` maps column name → index;
-  – `re_translate: Vector` holds the reverse mapping (index → name);
-  – data lives in `Vector(np.array(object))`, one NumPy row per CSV row.
-• Default CSV delimiter: comma (`,`). File encoding follows Python’s `open()` (typically UTF-8).
-• Optional value parsing: you may convert strings to common types (int, float, bool, list) via `convert_to_common_type`.
+INCORRECT_PATH = "Incorrect path provided."
 
-Prompt & context
-----------------
-The prompt shows where you are:
-• (./)         — root (no user selected)
-• (./alice)    — inside user “alice”
+INCORRECT_TRANSITION = "Incorrect transition."
 
-Available commands (current version)
-------------------------------------
-General notes:
-• Commands are whitespace-split. Everything after a keyword like `user` is treated as part of the argument (e.g., `add user Data Team` names the user “Data Team”).
-• Unknown commands produce an error. Some commands are only allowed in a specific context (root vs user).
+UNKNOWN_COMMAND = "I'm sorry, I couldn't understand the command."
 
-1) documentation
-   Print this help text.
-   Examples:
-     (./)        >>> documentation
-     (./alice)   >>> documentation
-
-2) ls
-   List contents of the current context.
-   Behavior:
-     • in (./)       — list all users;
-     • in (./<user>) — list that user’s CSV names.
-   Examples:
-     (./)        >>> ls
-     (./alice)   >>> ls
-
-3) cd
-   Change context.
-   Syntax:
-     • cd <user>  — enter that user’s context;
-     • cd .       — go to root (./);
-     • cd ..      — same as `cd .` (go to root);
-     • cd         — with no arguments, stay where you are.
-   Examples:
-     (./)        >>> cd alice        → (./alice)
-     (./alice)   >>> cd ..           → (./)
-     (./)        >>> cd .            → (./)
-
-4) add user [<name>]
-   Context: only in root (./).
-   Purpose: create a new user.
-   Syntax:
-     • add user                 — create a user with a generated random name and print it;
-     • add user Alice           — create user named “Alice”;
-     • add user Data Team       — create user named “Data Team”.
-   Results:
-     • on success — confirm and/or print the created name;
-     • on name conflict — error: the name is already taken.
-   Examples:
-     (./) >>> add user
-     (./) >>> add user data-team
-
-5) add csv [<path_to_csv>] [name <csv_name>]
-   Context: only inside a user (./<user>).
-   Purpose: attach a CSV file to the current user.
-   Syntax:
-     • add csv
-         – load a file from the default CSV directory (see below);
-         – CSV name is auto-generated (e.g., default_1, default_2, …).
-     • add csv ./datasets/iris.csv
-         – load the specified path; name is auto-generated.
-     • add csv ./datasets/iris.csv name iris
-         – load the specified path under explicit name “iris”.
-   Rules:
-     • If `name` is omitted, an automatic name is assigned.
-     • If the chosen name already exists for this user, return the error string:
-       "The name is already exists".
-   Examples:
-     (./alice) >>> add csv
-     (./alice) >>> add csv ./datasets/iris.csv
-     (./alice) >>> add csv ./datasets/iris.csv name iris
-
-6) quit / q
-   Exit the shell.
-   Examples:
-     (./)        >>> q
-     (./alice)   >>> quit
-
-Default CSV directory
----------------------
-• When `add csv` is called without a path, the shell loads from a default directory (e.g., ./csv/).
-• Expose this as a constant in code, e.g., `DEFAULT_CSV_DIR = "./csv"`.
-
-Errors & messages
------------------
-• Unknown command — the input does not match any supported command.
-• Cannot execute in this context — you tried a root-only command while inside a user (or vice versa).
-• The name is already exists — CSV name collision within the same user.
-• No such user — `cd <user>` was called with an unknown name.
-• Failed to load CSV — path is invalid or the file cannot be read.
-
-Planned table operations (coming next)
---------------------------------------
-• head <n>             — show the first n rows of a selected table.
-• tail <n>             — show the last n rows.
-• sort by <column>     — sort the current table by the given column.
-• median by <column>   — compute median over a column.
-• top <k> by <column>  — show k best rows by a column (descending).
-• where <expr>         — filter rows by a predicate/expression.
-• group by <col> [agg …] — group & aggregate (count, sum, mean, etc.).
-
-Example session
----------------
-(./)          >>> ls
-(./)          >>> add user analysts
-Created user: analysts
-(./)          >>> cd analysts
-(./analysts)  >>> add csv ./csv/sales.csv name sales
-Added CSV "sales"
-(./analysts)  >>> ls
-sales
-(./analysts)  >>> cd ..
-(./)          >>> ls
-analysts
-(./)          >>> q
-
-Implementation notes (for developers)
--------------------------------------
-• The prompt should render as:
-    (./) >>>            in root
-    (./<user>) >>>      in a user
-• `ls`:
-  – in root: list `all_users.keys()`;
-  – in user: list `current_user.all_csv_names()`.
-• `cd .` and `cd ..` should both land in root; calling either in root keeps you in root.
-• `add user` should only be accepted in root; it must either generate a unique random name or use an explicit one, failing on duplicates.
-• `add csv` must be rejected unless a user is selected; if no path is given, assemble a path using `DEFAULT_CSV_DIR`.
-• CSV header row defines column names; data rows are appended into `ReadCSV.table` as NumPy object rows.
-"""
-
-def write_into(output: TextIO | None = sys.stdout, user_name: str | None = "root", prefix: str | None = "") -> None:
+def write_into(output: TextIO | None = sys.stdout, user_name: str | None = "sudo", prefix: str | None = "") -> None:
     if output is None:
         output = sys.stdout
     if user_name is None:
-        user_name = "root"
+        user_name = "sudo"
     if prefix is None:
         prefix = ""
     all_output: str = prefix
@@ -504,9 +352,53 @@ def write_into(output: TextIO | None = sys.stdout, user_name: str | None = "root
     output.write(all_output)
     output.flush()
 
+def print_txt(path: str, output: TextIO = sys.stdout, encoding: str = "utf-8") -> None:
+    chunk_size: int = 1 << 16
+    with open(path, "r", encoding=encoding) as f:
+        chunk = f.read(chunk_size)
+        while chunk:
+            output.write(chunk)
+            chunk = f.read(chunk_size)
+    output.write("\n")
+    output.flush()
+
+def normalize_path(path: str) -> str:
+    norm_path: list[str] = []
+    point_or_clear_elements: int = 0
+    position: int = 0
+    first_element: str = "/" if len(path) > 0 and path[0] == "/" else ""
+    not_none_and_not_point: int = 0
+    if first_element != "":
+        not_none_and_not_point += 1
+    for prefix in path.split("/"):
+        if position == 0:
+            if first_element == "":
+                first_element = prefix
+        if prefix == "" or prefix == ".":
+            point_or_clear_elements += 1
+            continue
+        if prefix == "..":
+            if len(norm_path) > 0 and norm_path[-1] != "..":
+                norm_path.pop()
+                not_none_and_not_point -= 1
+            else:
+                if first_element == "." or first_element == ".." or path[0] != "/":
+                    norm_path.append(prefix)
+                    not_none_and_not_point += 1
+            continue
+        not_none_and_not_point += 1
+        norm_path.append(prefix)
+        position += 1
+    if not_none_and_not_point == 0:
+        return "."
+    if first_element == "/":
+        return "/" + "/".join(norm_path)
+    return "/".join(norm_path)
+
+
 def terminal(inp: TextIO = sys.stdin, output: TextIO = sys.stdout) -> None:
-    all_users: dict[str, User] = {"root": User()}
-    user_now: str = "root"
+    all_users: dict[str, User] = {"sudo": User()}
+    user_now: str = "sudo"
     write_into(output, user_now, GREETINGS)
     all_commands: list = inp.readline().rstrip("\r\n").split() or ["" for _ in range(1)]
     exit_words: set[str] = set()
@@ -515,21 +407,63 @@ def terminal(inp: TextIO = sys.stdin, output: TextIO = sys.stdout) -> None:
     while all_commands[0].lower() not in exit_words:
         prefix = ""
         if len(all_commands) == 1:
-            if all_commands[0] == "ls":
+            if all_commands[0].lower() == "ls":
                 if user_now == "":
                    prefix = "\n".join(all_users.keys())
                 else:
                     prefix = "\n".join(all_users[user_now].all_csv_names())
             elif all_commands[0] == "documentation":
-                prefix = DOCUMENTATION
-            else:
+                print_txt(documentation_path, output)
+            elif all_commands[0] != "":
                 prefix = "I'm sorry, I didn't understand the command."
-        else:
+        elif all_commands[0].lower() == "cd":
+            norm_path: str = normalize_path(all_commands[1])
+            flag: bool = True
+            position: int = 0
+            while position < len(norm_path) and norm_path[position] in {".", "/"}:
+                if position >= 2 and norm_path[position - 2] == "." and norm_path[position - 1] == "." and norm_path[position] == ".":
+                    flag = False
+                    break
+                position += 1
+            if not flag:
+                prefix = INCORRECT_PATH
+            elif norm_path[:position] == "/":
+                all_user_name: str = norm_path[position:] + " ".join(all_commands[2:])
+                if all_user_name == "":
+                    user_now = ""
+                elif all_user_name not in all_users:
+                    prefix = USER_NAME_NOT_EXISTS
+                else:
+                    user_now = all_user_name
+            elif len(norm_path[:position]) >= 2 and norm_path[:position] != "./":
+                all_user_name: str = norm_path[position:] + " ".join(all_commands[2:])
+                if all_user_name == "":
+                    user_now = ""
+                elif all_user_name == "" or all_user_name not in all_users:
+                    prefix = USER_NAME_NOT_EXISTS
+                else:
+                    user_now = all_user_name
+            elif position == 0 or (norm_path[:position] == "./" and len(norm_path) > 2):
+                all_user_name: str = norm_path + " ".join(all_commands[2:])
+                if user_now != "":
+                    prefix = INCORRECT_TRANSITION
+                elif all_user_name not in all_users:
+                    prefix = USER_NAME_NOT_EXISTS
+                else:
+                    user_now = all_user_name
+            elif norm_path != "." and norm_path != "./":
+                prefix = UNKNOWN_COMMAND
+        elif all_commands[0].lower() == "add":
+            if all_commands[1].lower() == "user":
+                pass
 
-            prefix = "I'm sorry, I didn't understand the command."
+
+
+
+
+
         write_into(output, user_now, prefix)
         all_commands = inp.readline().rstrip("\r\n").split() or ["" for _ in range(1)]
-
 
 
 def main():
@@ -537,11 +471,10 @@ def main():
     our_csv = ReadCSV("./homework_oop/repositories.csv")
     print(our_csv.getColumnNames())
     """
-    exec("""a=6
-b=5
-print('a*b: ', a*b)""")
     with open("log.txt", "w") as log:
         log.write("")
+    #wow = ReadCSV("./homework_oop/repositories.csv")
+    #print(wow.getColumnByName("Forks"))
     terminal()
 
 

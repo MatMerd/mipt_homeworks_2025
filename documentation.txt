@@ -1,0 +1,187 @@
+CSV Shell — a tiny console for working with CSV files
+
+What this shell does
+--------------------
+This utility lets you:
+• create lightweight “users” (data containers),
+• attach any number of CSV files to each user,
+• inspect what’s already attached,
+• (soon) run table operations: sort by column, take head/tail, compute median by column, pick top-K by a metric, group & aggregate, filter, etc.
+
+Data model (quick overview)
+---------------------------
+• Contexts:
+  – (./)          — root; no user is selected.
+  – (./<user>)    — inside a user’s namespace.
+• Each user stores a dictionary of CSV tables: {csv_name: ReadCSV}.
+• ReadCSV:
+  – the first row of a CSV is treated as the header (column names);
+  – `translate: dict[str, int]` maps column name → index;
+  – `re_translate: Vector` holds the reverse mapping (index → name);
+  – data lives in `Vector(np.array(object))`, one NumPy row per CSV row.
+• Default CSV delimiter: comma (`,`). File encoding follows Python’s `open()` (typically UTF-8).
+• Optional value parsing: you may convert strings to common types (int, float, bool, list) via `convert_to_common_type`.
+
+Prompt & context
+----------------
+The prompt shows where you are:
+• (./)         — root (no user selected)
+• (./alice)    — inside user “alice”
+
+Available commands (current version)
+------------------------------------
+General notes:
+• Commands are whitespace-split. Everything after a keyword like `user` is treated as part of the argument (e.g., `add user Data Team` names the user “Data Team”).
+• Unknown commands produce an error. Some commands are only allowed in a specific context (root vs user).
+
+1) documentation
+   Print this help text.
+   Examples:
+     (./)        >>> documentation
+     (./alice)   >>> documentation
+
+2) ls
+   List contents of the current context.
+   Behavior:
+     • in (./)       — list all users;
+     • in (./<user>) — list that user’s CSV names.
+   Examples:
+     (./)        >>> ls
+     (./alice)   >>> ls
+
+3) cd
+   Change context.
+   Syntax (all supported forms):
+     • cd .                — go to root (./);
+     • cd ..               — same as `cd .` (go to root);
+     • cd <user>           — from root only: enter that user’s context;
+     • cd ./<user>         — from anywhere: enter that user’s context.
+   Notes:
+     • If the specified user does not exist, nothing changes and the shell prints: `No such user`.
+     • `cd <user>` without the `./` prefix is only resolved when you are in root.
+       When you are already inside a user, use `cd ./<user>` to switch directly to another user.
+   Examples:
+     (./)          >>> cd alice        → (./alice)
+     (./alice)     >>> cd ..           → (./)
+     (./)          >>> cd .            → (./)
+     (./alice)     >>> cd ./bob        → (./bob)
+     (./)          >>> cd unknown
+     No such user
+     (./)          >>>
+
+4) add user [<name>]
+   Context: only in root (./).
+   Purpose: create a new user.
+   Syntax:
+     • add user                 — create a user with a generated random name and print it;
+     • add user Alice           — create user named “Alice”;
+     • add user Data Team       — create user named “Data Team”.
+   Results:
+     • on success — confirm and/or print the created name;
+     • on name conflict — error string (exactly):
+       "The name is already exists"
+       (the user is not created).
+   Examples:
+     (./) >>> add user
+     (./) >>> add user data-team
+     (./) >>> add user data-team
+     The name is already exists
+
+5) add csv [<path_to_csv>] [name <csv_name>] [-name=<csv_name>]
+   Context: only inside a user (./<user>).
+   Purpose: attach a CSV file to the current user.
+   Syntax:
+     • add csv
+         – load a file from the default CSV directory (see below);
+         – CSV name is auto-generated (e.g., default_1, default_2, …).
+     • add csv ./datasets/iris.csv
+         – load the specified path; name is auto-generated.
+     • add csv ./datasets/iris.csv name iris
+         – load the specified path under explicit name “iris”.
+     • add csv ./datasets/iris.csv -name=iris
+         – same as above; `-name=...` is an alternative flag form.
+   Rules:
+     • If a name is provided with both `name <csv_name>` and `-name=<csv_name>`, the last one wins.
+     • If the chosen name already exists for this user, return the error string (exactly):
+       "The name is already exists"
+       (the CSV is not added).
+   Examples:
+     (./alice) >>> add csv
+     (./alice) >>> add csv ./datasets/iris.csv
+     (./alice) >>> add csv ./datasets/iris.csv name iris
+     (./alice) >>> add csv ./datasets/iris.csv -name=iris
+     The name is already exists
+
+6) quit / q
+   Exit the shell.
+   Examples:
+     (./)        >>> q
+     (./alice)   >>> quit
+
+Default CSV directory
+---------------------
+• When `add csv` is called without a path, the shell loads from a default directory (e.g., ./csv/).
+• Expose this as a constant in code, e.g., `DEFAULT_CSV_DIR = "./csv"`.
+
+Errors & messages
+-----------------
+• Unknown command — the input does not match any supported command.
+• Cannot execute in this context — you tried a root-only command while inside a user (or vice versa).
+• The name is already exists — a user/CSV name collision.
+• No such user — `cd <user>` or `cd ./<user>` was called with an unknown name (context remains unchanged).
+• Failed to load CSV — path is invalid or the file cannot be read.
+
+Planned table operations (coming next)
+--------------------------------------
+• head <n>             — show the first n rows of a selected table.
+• tail <n>             — show the last n rows.
+• sort by <column>     — sort the current table by the given column.
+• median by <column>   — compute median over a column.
+• top <k> by <column>  — show k best rows by a column (descending).
+• where <expr>         — filter rows by a predicate/expression.
+• group by <col> [agg …] — group & aggregate (count, sum, mean, etc.).
+
+Example session
+---------------
+(./)            >>> ls
+(./)            >>> add user analysts
+Created user: analysts
+(./)            >>> cd analysts
+(./analysts)    >>> add csv ./csv/sales.csv -name=sales
+Added CSV "sales"
+(./analysts)    >>> ls
+sales
+(./analysts)    >>> cd ./qa
+No such user
+(./analysts)    >>> cd ..
+(./)            >>> cd ./analysts
+(./analysts)    >>> add csv ./csv/sales.csv -name=sales
+The name is already exists
+(./analysts)    >>> cd ./data-science
+No such user
+(./analysts)    >>> cd ..
+(./)            >>> ls
+analysts
+(./)            >>> q
+
+Implementation notes (for developers)
+-------------------------------------
+• The prompt should render as:
+    (./) >>>            in root
+    (./<user>) >>>      in a user
+• `ls`:
+  – in root: list `all_users.keys()`;
+  – in user: list `current_user.all_csv_names()`.
+• `cd`:
+  – `cd .` and `cd ..` always land in root (no-op if already in root).
+  – From root: `cd <user>` or `cd ./<user>` both work.
+  – From anywhere: `cd ./<user>` works.
+  – If the target user does not exist, print `No such user` and keep the current context.
+• `add user`:
+  – only in root; generate a unique random name if none is provided;
+  – on duplicate, print exactly: `The name is already exists`.
+• `add csv`:
+  – only when a user is selected; if no path is given, build a path using `DEFAULT_CSV_DIR`;
+  – accept both `name <csv_name>` and `-name=<csv_name>` (last one wins);
+  – on duplicate CSV name, print exactly: `The name is already exists`.
+• CSV header row defines column names; data rows are appended into `ReadCSV.table` as NumPy object rows.
