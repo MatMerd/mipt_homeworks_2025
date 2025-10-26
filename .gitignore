@@ -208,3 +208,7 @@ __marimo__/
 
 # VSCode
 .vscode
+
+.idea
+
+homework_oop/saved
