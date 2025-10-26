@@ -1,0 +1,418 @@
+CSV Shell — Documentation
+
+Purpose
+-------
+A tiny interactive console to work with CSV files:
+• create lightweight “users” (data containers);
+• attach CSV files to a user;
+• list what’s attached;
+• sort tables and create derived tables;
+• define reusable sort keys (“compiled keys”);
+• export user tables to disk (CSV / JSON);
+• delete tables from memory or delete exported files from disk.
+
+Startup, prompt, exit
+--------------------
+• On start, the shell creates a user named `sudo` and enters it.
+• Prompt format:
+  (./<user>) >>>      — inside a user (e.g., (./sudo) >>>)
+  (./) >>>            — root (no user selected)
+• Exit commands: `quit` or `q`.
+
+File system locations
+---------------------
+• Export root: ROOT_PATH = "./root"
+  Saved files go to: ./root/<user>/<csv_name>.<ext>
+• Default CSV when path omitted: ./homework_oop/repositories.csv
+• Avoid `~` in paths: existence is checked with expanduser(), but opening uses the original string.
+
+Commands (current build)
+------------------------
+
+1) documentation
+   Print this file (./documentation.txt).
+
+   Example:
+     (./sudo) >>> documentation
+
+
+2) ls
+   List the contents of the current context.
+   • In root (./): user names, one per line.
+   • In a user (./<user>): that user’s CSV names, one per line.
+   Prints nothing if empty.
+
+   Examples:
+     (./)      >>> ls
+     analysts
+     sudo
+
+     (./sudo)  >>> ls
+     iris
+
+
+3) cd
+   Change context. User names may contain spaces — everything after the first argument
+   is treated as part of the name.
+
+   Supported forms:
+   • cd /            — go to root (./).
+   • cd ..           — go to root (./).
+   • cd /<user>      — jump to that user from anywhere.
+   • cd <user>       — works ONLY from root.
+   • cd ./<user>     — works ONLY from root (treated like `cd <user>`).
+   • cd .            — no-op.
+
+   Invalid prefix:
+   • Inputs that begin with three dots (`...`) are rejected.
+
+   Exact error messages:
+   • A user with that name does not exist.
+   • Incorrect transition.
+   • Incorrect path provided.
+
+
+4) add user [<name>]
+   Create a new user (ONLY in root).
+
+   Behavior:
+   • Without a name, a random SpongeBob-style name with a timestamp is generated.
+   • Names must NOT start with `.` or `/`.
+   • Duplicate names are rejected.
+
+   Exact messages:
+   • Incorrect directory for creating a new user.
+   • I'm sorry, but the username cannot begin with the characters . or /
+   • This name is already exists
+   • Add new user <name>
+
+   Examples:
+     (./) >>> add user
+     Add new user Patrick Star202510260101234567
+
+     (./) >>> add user data team
+     Add new user data team
+
+     (./) >>> add user data team
+     This name is already exists
+
+
+5) add csv [<path>] [--name=<csv_name ...>]
+   Attach a CSV file to the CURRENT user (NOT allowed in root).
+
+   Path handling:
+   • If <path> is omitted, the shell uses ./homework_oop/repositories.csv.
+   • The string is normalized internally; existence is checked with expanduser();
+     then the ORIGINAL string is used to open the file.
+     Tip: avoid `~` in paths; use absolute or relative paths.
+
+   Name handling:
+   • If `--name=` is omitted: default_1, default_2, ...
+   • Everything after `--name=` is part of the name (spaces allowed).
+
+   Tokenization tip:
+   • The path is consumed until the first token that starts with `--name=`.
+
+   Exact messages:
+   • I'm sorry, but add csv cannot be used in the root directory
+   • Incorrect path provided.
+   • This name is already exists
+   • Add new csv file <csv_name> to the user <user>
+
+   Examples:
+     (./sudo) >>> add csv ./datasets/iris.csv --name=iris
+     Add new csv file iris to the user sudo
+
+     (./sudo) >>> add csv
+     Add new csv file default_1 to the user sudo
+
+
+6) key create <key_name>
+   6.1) Create a reusable key function for sorting (in the current user).
+        After this command, the shell prompts you to type the expression line.
+
+        Security: the function is compiled with a restricted SAFE_BUILTINS set.
+
+        Flow:
+          (./user) >>> key create score_key
+          def score_key(x):
+              return <TYPE YOUR EXPRESSION HERE AND PRESS ENTER>
+
+        Examples:
+          Return absolute value:
+            (./sudo) >>> key create abs_key
+            def abs_key(x):
+                return abs(x)
+
+        Errors:
+          • Key compile error: <python-exception-text>
+          • Invalid name of the key >:(   (if key_name is not a valid identifier)
+
+   6.2) key list
+        Print the source code of all compiled keys in the current user (one after another).
+
+        Example:
+          (./sudo) >>> key list
+          def abs_key(x):
+              return abs(x)
+
+7) sort <csv_name> | --column <name|index> [--using <key_name>] [--type <int|float|str>] --out <new_csv_name>
+   Sort the given CSV (in memory) by the specified column and create a NEW CSV stored under `--out`.
+
+   Arguments:
+   • --column  (required)  — column index (0-based) OR column name.
+   • --out     (required)  — name for the new CSV (must not already exist).
+   • --type    (optional)  — cast the column values before sorting: int | float | str.
+   • --using   (optional)  — name of a previously created key (see `key create`).
+                              The key is applied to the (possibly cast) value.
+
+   Behavior:
+   • Full rows are reordered by the column; row associations are preserved.
+   • The result lives in memory only — use `save` to persist to disk.
+
+   Success message:
+   • Created CSV '<new_csv_name>'
+
+   Typical errors:
+   • CSV '<name>' not found.
+   • Sort error: Missing required --column
+   • Sort error: Missing required --out <new_csv_name>
+   • Sort error: Unknown type: <something>
+   • Sort error: No such key: <key_name>
+   • Sort error: CSV '<new_name>' already exists
+   • Sort failed.
+
+   Examples:
+     Sort by numeric column (cast to int):
+       (./sudo) >>> sort repos | --column Forks --type int --out repos_by_forks
+
+     Sort by index with custom key:
+       (./sudo) >>> key create negate
+       def negate(x):
+           return -int(x)
+       (./sudo) >>> sort repos | --column 2 --using negate --out repos_desc_by_col2
+
+     Case-insensitive sort by a text column:
+       (./sudo) >>> key create lower
+       def lower(x):
+           return x.lower()
+       (./sudo) >>> sort contacts | --column Name --using lower --out contacts_by_name_ci
+
+
+8) save [ . | --names=<csv1,csv2,...> ] [--format=.csv|.json]
+   Export the current user’s CSVs to disk under ./root/<user>/.
+
+   Context A — inside a user (./<user>):
+   • Save ALL CSVs (default format .csv):
+       (./alice) >>> save
+       Successful preservation
+
+     Shorthand:
+       (./alice) >>> save .
+       Successful preservation
+
+   • Save ALL CSVs as JSON:
+       (./alice) >>> save --format=.json
+       Successful preservation
+       (JSON orientation is "records")
+
+   • Save only selected CSVs:
+       (./alice) >>> save --names=iris,metrics --format=.csv
+       Successful preservation
+
+   Context B — in root (./):
+   • Save ALL CSVs of ALL users (default .csv):
+       (./) >>> save all
+       Successful preservation
+
+     As JSON:
+       (./) >>> save all --format=.json
+       Successful preservation
+
+   Notes:
+   • Supported formats: `.csv`, `.json`  — anything else ⇒ "I'm sorry, but I cannot work with the .<ext> format"
+   • `--names=` expects a comma-separated list (no spaces inside tokens).
+   • If a listed name doesn’t exist ⇒ "Name <csv_name> doesn't exist"
+
+   Output files:
+   • ./root/<user>/<csv_name>.csv
+   • ./root/<user>/<csv_name>.json
+
+
+9) delete [ . | --names=<csv1,csv2,...> ]
+   Delete CSVs from MEMORY (not from disk) for the CURRENT user.
+   If called in root as `delete all`, remove all CSVs from all users and clear the user list.
+
+   Context A — inside a user:
+   • Delete ALL CSVs from memory:
+       (./bob) >>> delete
+       Successful deletion
+     or:
+       (./bob) >>> delete .
+       Successful deletion
+
+   • Delete selected CSVs from memory:
+       (./bob) >>> delete --names=iris,metrics
+       Successful deletion
+
+   Context B — in root:
+   • Delete everything from memory and remove all users:
+       (./) >>> delete all
+       Successful deletion
+
+   Notes:
+   • After deletion from memory, the CSV names disappear from `ls`.
+   • Exported files on disk are NOT removed — use `rdelete` to remove files.
+
+
+10) rdelete [ . | --names=<csv1,csv2,...> ] [--format=.csv|.json]
+    Delete EXPORTED FILES from disk under ./root/<user>/ for the CURRENT user.
+    If called in root as `rdelete all`, the entire `./root` directory is removed recursively.
+
+    Context A — inside a user:
+    • Remove ALL exported .csv files for the user:
+        (./alice) >>> rdelete
+        Successful rdeletion
+      (equivalent to `rdelete --format=.csv`)
+
+    • Remove ALL exported .json files:
+        (./alice) >>> rdelete --format=.json
+        Successful rdeletion
+
+    • Remove selected files:
+        (./alice) >>> rdelete --names=iris,metrics --format=.json
+        Successful rdeletion
+
+      Important:
+      • You MUST match the file extension you saved earlier (.csv vs .json).
+        If you saved JSONs and call `rdelete` without `--format=.json`, the .json
+        files will remain.
+
+    Context B — in root:
+    • Remove the entire export directory:
+        (./) >>> rdelete all
+        Successful rdeletion
+
+    Notes:
+    • Paths deleted are literal files: ./root/<user>/<csv_name>.<ext>
+    • Missing files are ignored.
+
+
+Messages & errors (reference)
+-----------------------------
+• I'm sorry, I couldn't understand the command.
+• A user with that name does not exist.
+• Incorrect transition.
+• Incorrect path provided.
+• Incorrect directory for creating a new user.
+• I'm sorry, but the username cannot begin with the characters . or /
+• I'm sorry, but add csv cannot be used in the root directory
+• This name is already exists
+• Name <csv_name> doesn't exist
+• I'm sorry, but I cannot work with the .<ext> format
+• Successful preservation
+• Successful deletion
+• Successful rdeletion
+• Add new user <name>
+• Add new csv file <csv_name> to the user <user>
+• Created CSV '<new_csv_name>'
+
+
+Data model (internal)
+---------------------
+Root
+• names: dict[str, User] — all users by name.
+• clear() — removes all users.
+
+User
+• username: str
+• all_csv: dict[str, ReadCSV] — tables by name.
+• sort_keys: dict[str, Callable[[Any], Any]] — compiled key functions.
+• key_name_to_source: dict[str, str] — source snippet for listing.
+• add_csv(path, name) -> str | NAME_EXISTS | None
+• all_csv_names() -> list[str] | None
+• get_csv(name) -> ReadCSV | None
+• csv_file_exists(name) -> bool
+• del_csv(name) -> None
+• compileNamedKey(name, expression) -> Callable   (secured by SAFE_BUILTINS)
+
+ReadCSV
+• Header: first row are column names.
+• translate: dict[str, int] — column name → index.
+• re_translate: Vector — reverse mapping (index → name).
+• table: Vector — each row is a NumPy row (np.array(object)).
+• Automatic per-column casting on load:
+  tries int → float → bool ("true"/"false") → list/tuple via ast.literal_eval; otherwise leaves strings.
+
+Vector (storage primitive)
+• Dynamic array backed by NumPy.
+• append, copy, deepcopy; integer/slice indexing; 2-D reads like v[:, j]; iteration.
+• Negative integer index supported via modulo by size.
+
+Programmatic helpers (in code)
+------------------------------
+• python_sort_column(csv: ReadCSV, column_number: int | str,
+                     needed_type: int|float|str|None = None,
+                     key: Callable[[Any], Any] | None = None) -> ReadCSV | None
+  – Sorts rows by the chosen column (ascending) and returns a full table copy sorted by that column.
+  – If `needed_type` is provided, it casts the column values before key/compare.
+  – If `key` is provided, it transforms the value before comparison.
+  – Used by the `sort` command.
+
+• medianByColumn(csv: ReadCSV, column: int | str) -> float
+  – Median of the chosen column (ascending order); if even length, average of two middles.
+
+• getNBestByColumn(csv: ReadCSV, column: int | str, number: int) -> ReadCSV
+  – Take last `number` rows from ascending-sorted-by-column (i.e., top-k largest); returns a table.
+
+• save_as_csv(read_csv: ReadCSV, path: str, delimiter: str = ",", write_header: bool = True)
+• save_as_json(read_csv: ReadCSV, path: str, orient: str = "records", ensure_ascii: bool = False, indent: int | None = 2)
+  – JSON orients supported in code: "records" (default), "split", "jsonl". CLI always uses "records".
+
+
+Examples (end-to-end)
+---------------------
+# Attach and list
+(./sudo) >>> add csv ./datasets/iris.csv --name=iris
+Add new csv file iris to the user sudo
+(./sudo) >>> ls
+iris
+
+# Define and view keys
+(./sudo) >>> key create lower
+def lower(x):
+    return x.lower()
+(./sudo) >>> key list
+def lower(x):
+    return x.lower()
+
+# Sort by a text column case-insensitively
+(./sudo) >>> sort iris | --column species --using lower --out iris_by_species
+Created CSV 'iris_by_species'
+(./sudo) >>> ls
+iris
+iris_by_species
+
+# Save everything to CSV files
+(./sudo) >>> save
+Successful preservation
+# → ./root/sudo/iris.csv
+# → ./root/sudo/iris_by_species.csv
+
+# Delete a derived table from memory (file on disk stays)
+(./sudo) >>> delete --names=iris_by_species
+Successful deletion
+(./sudo) >>> ls
+iris
+
+# Remove exported CSVs for this user
+(./sudo) >>> rdelete --format=.csv
+Successful rdeletion
+# → deletes ./root/sudo/*.csv
+
+# From root: clean everything
+(./sudo) >>> cd /
+(./) >>> delete all
+Successful deletion
+(./) >>> rdelete all
+Successful rdeletion
