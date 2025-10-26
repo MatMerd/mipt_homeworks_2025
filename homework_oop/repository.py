@@ -103,7 +103,6 @@ class Repository:
 
     @staticmethod
     def attr_to_csv_key(name: str) -> str:
-        if name != "url":
-            return name.replace("_", " ").title()
-        else:
+        if name == "url":
             return "URL"
+        return name.replace("_", " ").title()

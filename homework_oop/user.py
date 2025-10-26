@@ -12,10 +12,10 @@ from homework_oop.repository import Repository
 @dataclass
 class SavedQuery:
     name: str
-    select_keys: List[str] = field(default_factory=list)
-    sort_keys: List[Tuple[str, bool]] = field(default_factory=list)
-    group_keys: List[str] = field(default_factory=list)
-    filters: List[Callable[[Repository], bool]] = field(default_factory=list)
+    select_keys: List[str] = None
+    sort_keys: List[Tuple[str, bool]] = None
+    group_keys: List[str] = None
+    filters: List[Callable[[Repository], bool]] = None
     result: Optional[
         List[Dict[str, Any]] | Dict[Tuple[Any, ...], List[Dict[str, Any]]]
     ] = None
