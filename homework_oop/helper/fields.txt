@@ -1,0 +1,7 @@
+Список полей:
+1) Целочисленный тип: size, stars, forks, issues, watchers
+2) Строковый тип: name, description, url, home_page, language, licence, default_branch
+3) Логический тип: has_issues, has_projects, has_downloads, has_wiki, has_pages,
+    has_discussions, is_fork, is_archived, is_template
+4) Дата и время: created_at, updated_at
+5) Особое поле: topics
