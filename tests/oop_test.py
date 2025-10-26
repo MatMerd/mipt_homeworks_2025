@@ -1,3 +1,4 @@
+import os
 from typing import List
 from homework_oop.repository import Repository
 from homework_oop.reader import CSVRepositoryReader
@@ -15,8 +16,9 @@ def stats_test(repositories: List[Repository]):
     print(f"количество репозиториев без языка: {stats.repos_without_language()}")
     print(f"топ 10 репозиториев по количеству форков: {stats.top_10_forks()}")
     print(f"топ 10 языков по количеству звезд: {stats.top_10_popular_languages()}")
-    save_to_csv("homework_oop/stats.csv", stats.top_10_popular_languages())
-    save_to_json("homework_oop/stats.json", stats.top_10_popular_languages())
+    os.makedirs("tests/temp_obj", exist_ok=True)
+    save_to_csv("tests/temp_obj/stats.csv", stats.top_10_popular_languages())
+    save_to_json("tests/temp_obj/stats.json", stats.top_10_popular_languages())
 
 def user_test(repositories: List[Repository]):
     print("="*10, " user test ", "="*10)
