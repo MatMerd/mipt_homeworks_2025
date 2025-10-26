@@ -1,0 +1,4 @@
+name,description,url,size,stars,forks,issues,language,license
+freeCodeCamp,freeCodeCamp.org's open-source codebase and curriculum. Learn to code for free.,https://github.com/freeCodeCamp/freeCodeCamp,387451,374074,33599,248,TypeScript,BSD-3-Clause
+free-programming-books,:books: Freely available programming books,https://github.com/EbookFoundation/free-programming-books,17087,298393,57194,46,,CC-BY-4.0
+awesome,😎 Awesome lists about all kinds of interesting topics,https://github.com/sindresorhus/awesome,1441,269997,26485,61,,CC0-1.0
