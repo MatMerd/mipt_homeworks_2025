@@ -1,6 +1,8 @@
 import csv
 import os
 
+# Б13-403 Т. Вязовик
+
 class Solver:
     def __init__(self, filepath):
         self.db = []
