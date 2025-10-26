@@ -1,11 +1,11 @@
 import csv
 from typing import TextIO
 
-
+from pathlib import Path
 class CSVReader:
     __slots__ = ("__file", "__data")
 
-    def __init__(self, filepath: str) -> None:
+    def __init__(self, filepath: Path) -> None:
         try:
             self.__file: TextIO = open(filepath, mode='r', encoding='utf-8')
         except FileNotFoundError:

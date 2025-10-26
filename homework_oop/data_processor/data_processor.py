@@ -1,5 +1,5 @@
 from collections import defaultdict
-
+import difflib
 
 class DataProcessor:
     __slots__ = ("__available_fields", "__data", "__operations")
@@ -12,8 +12,11 @@ class DataProcessor:
     @staticmethod
     def __validate_fields(fields: list[str], available_fields: list[str]) -> None:
         invalid_fields = [f for f in fields if f not in available_fields]
+        similar_fields = [difflib.get_close_matches(f, available_fields, n=1) for f in invalid_fields]
         if invalid_fields:
             error_message = f"Ошибка: не найдены поля: {", ".join(invalid_fields)}."
+            if similar_fields:
+                error_message += f" Возможно, вы имели в виду: {", ".join([sf[0] for sf in similar_fields if sf])}."
             raise ValueError(error_message)
 
     def select(self, *fields: str):

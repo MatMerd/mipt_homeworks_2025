@@ -3,11 +3,11 @@ from homework_oop.data_processor.data_processor import DataProcessor
 from homework_oop.stat_analyzer.stat_analyzer import StatisticsCalculator
 from homework_oop.user.user import User
 from homework_oop.csv_reader.reader import CSVReader
-
+from pathlib import Path
 
 def main():
     print("\n[Чтение данных]")
-    reader = CSVReader('/home/vadimzachesov/PycharmProjects/mipt_homeworks_2025/homework_oop/repositories_short.csv')
+    reader = CSVReader(Path(__file__).parent / 'homework_oop/repositories_short.csv')
     reader.read()
     repo_data = reader.get_data()
     print(f"Успешно прочитано {len(repo_data)} записей.")
@@ -40,8 +40,8 @@ def main():
 
     print("\n[Экспорт результатов]")
     exporter = DataExporter(all_stats)
-    exporter.export('repo_statistics.json', export_format='json')
-    exporter.export('repo_statistics.csv', export_format='csv')
+    exporter.export('repo_statistics', export_format='json')
+    exporter.export('repo_statistics', export_format='csv')
 
 
 if __name__ == "__main__":
