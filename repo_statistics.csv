@@ -1,0 +1,16 @@
+median_repo_size
+19042.5
+
+most_starred_repo
+freeCodeCamp
+
+repos_without_language
+"['free-programming-books', 'awesome', '996.ICU', 'coding-interview-university']"
+
+top_10_by_commits
+"['freeCodeCamp', 'free-programming-books', 'awesome', '996.ICU', 'coding-interview-university', 'public-apis']"
+
+language_distribution
+TypeScript,,Python
+1,4,1
+
