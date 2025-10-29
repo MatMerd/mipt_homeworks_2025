@@ -8,6 +8,8 @@ class OperationType(Enum):
     SORT = 1
     SELECT = 2
     GROUP_BY = 3
+    WHERE = 4
+    LIMIT = 5
 
 @dataclass
 class Operation:

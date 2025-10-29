@@ -1,11 +1,15 @@
 from typing import List, Dict, Any, Union
-from datacls import OperationType, Query, QueryStats
+from datacls import OperationType, QueryStats
 from user import User
 from data_processor import DataProcessor
 
 class Executor:
     '''
     Класс для исполнения запросов и сохранения их статистик
+    
+    Fields:
+    queries_stats - Статистики запросов.
+    processor - дата процессор, исполняющий запросы.
     '''
     def __init__(self, processor: DataProcessor):
         self.queries_stats: list[Union[QueryStats, list[QueryStats]]] = []
@@ -49,6 +53,12 @@ class Executor:
         return sorted_repos[:10]
         
     def execute_query_and_compute_stats(self, user: User, user_query_name: str):
+        '''
+        Выполняет запрос, сохраняя результат в юзера. Также считает статистики результата запроса и сохраняет в себя.
+        Args:
+            user - Пользователь, имеющий запросы.
+            user_query_name - Имя запроса.
+        '''
         query = user.get_query(user_query_name)
         
         for operation in query.operations:
@@ -60,6 +70,10 @@ class Executor:
                 self.processor = self.processor.select(operation.args)
             elif operation.operation_type == OperationType.GROUP_BY:
                 self.processor = self.processor.group_by(operation.args[0])
+            elif operation.operation_type == OperationType.WHERE:
+                self.processor = self.processor.where(operation.args[0])
+            elif operation.operation_type == OperationType.LIMIT:
+                self.processor = self.processor.limit(operation.args[0])
                 
         query_result = self.processor.execute()
         self.processor = self.processor.reset()
