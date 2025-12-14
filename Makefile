@@ -1,16 +1,21 @@
-SRC_FOLDERS=$(wildcard homework_*)
+.PHONY: install run lint lint-check format test
+
+install:
+	pip install -e ".[dev]"
+
+run:
+	uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 lint:
-	ruff check $(SRC_FOLDERS)
-# 	flakeheaven lint $(SRC_FOLDERS)
-	mypy $(SRC_FOLDERS)
-	@make lint-format
+	ruff check src --fix
+	ruff format src
+
+lint-check:
+	ruff check src
+	ruff format src --check
 
 format:
-	ruff format $(SRC_FOLDERS)
+	ruff format src
 
-fix:
-	ruff check $(SRC_FOLDERS) --fix
-
-lint-format:
-	ruff format $(SRC_FOLDERS) --check
+test:
+	pytest tests -v

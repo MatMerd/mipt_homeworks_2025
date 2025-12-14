@@ -1,15 +1,32 @@
 [project]
-name = "mipt-homeworks-2025"
+name = "github-search-api"
 version = "0.1.0"
-description = "MIPT homeworks from base to production service"
-readme = "README.md"
-license = {text = "Apache License 2.0"}
-requires-python = "==3.13.*"
-dependencies = []
-
-[dependency-groups]
-lint = [
-    "flakeheaven>=3.3.0",
-    "mypy>=1.18.2",
-    "ruff>=0.14.0",
+description = "FastAPI application for GitHub repository search"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "httpx>=0.25.0",
+    "aiofiles>=23.2.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
