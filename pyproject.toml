@@ -19,9 +19,11 @@ dev = [
     "mypy>=1.18.2",
     "pytest>=8.4.2",
     "ruff>=0.14.0",
+    "types-aiofiles>=25.1.0.20240311",
 ]
 lint = [
     "flakeheaven>=3.3.0",
     "mypy>=1.18.2",
     "ruff>=0.14.0",
+    "types-aiofiles>=25.1.0.20240311",
 ]
