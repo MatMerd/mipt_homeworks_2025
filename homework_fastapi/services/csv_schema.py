@@ -1,0 +1,28 @@
+from __future__ import annotations
+
+CSV_HEADER: list[str] = [
+    "Name",
+    "Description",
+    "URL",
+    "Created At",
+    "Updated At",
+    "Homepage",
+    "Size",
+    "Stars",
+    "Forks",
+    "Issues",
+    "Watchers",
+    "Language",
+    "License",
+    "Topics",
+    "Has Issues",
+    "Has Projects",
+    "Has Downloads",
+    "Has Wiki",
+    "Has Pages",
+    "Has Discussions",
+    "Is Fork",
+    "Is Archived",
+    "Is Template",
+    "Default Branch",
+]

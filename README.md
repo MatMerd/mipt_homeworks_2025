@@ -1,27 +1,59 @@
-# MIPT Домашние работы 2025
-Домашние работы для МФТИ по курсу python начиная с базовых знаний и до прод-сервиса.
+# fastapi_homework
 
-> Для работы - сделайте fork этого репозитория и работайте в своём репо. После того, как будете готовы сдавать работы - делайте PR в родительский репозиторий и ждите проверки.
+Работу выполнили Корнилов Анатолий, Мызников Александр
 
-**Критерии приёмки**: пайплайн с линтерами пройден, тесты (если они требуются) пройдены и вы поправили все замечания по ревью. Так же, смогли ответить на вопросы под PR.
+This project was generated using fastapi_template.
 
-## Функции
-*Было принято решение пропустить, т.к. группы очень хорошо знают эту тему*
+## UV
 
-## OOP
-У нас есть файл `repositories.csv`. В нём находится большое количество репозиториев с их параметрами. Нужно:
-1. Реализовать класс для чтения данных из этого файла (Либо с нуля, либо реализовать на основе встроенной библиотеки csv)
-2. Реализовать класс для выбора, сортировки и группировки данных.
-   1. Класс исполняет операции после вызова определённого метода. Например `.execute()`. При этом
-   операции исполняются в "оптимальном" порядке (оптимальность выбирается в соответствии со скоростью работы)
-   2. Класс обрабатывает ошибки относительно переданных в методы данных. Например: если мы сортируем по несуществующему полю, то нужно выдать понятную ошибку о несуществующих полях и о возможных близких полях
-3. Реализовать класс пользователя, который может для себя сохранять выбранную сортировку, группировку и вызывать сохранённые "запросы"
-4. Реализовать класс для вычисления разных статистик по полученным после запроса данным.
-   1. Медиану по размеру репозитория
-   2. Максимально залайканный (самое большое количество звёзд) репозиторий
-   3. Репозитории без языка
-   4. Репозитории с самым большим числом коммитов (топ-10)
-   5. Статистики на ваш выбор
-5. Реализовать возможность сохранять вычисленные статистики в csv или json файл.
+This project uses uv. It's a modern dependency management
+tool.
 
-**Тесты для этого этапа не нужны.**
+To run the project use this set of commands:
+
+```bash
+python -m uvicorn homework_fastapi.main:app --reload
+```
+
+This will start the server on the configured host.
+
+You can find swagger documentation at `/docs`.
+
+Линтеры:
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy .
+```
+
+Примеры запросов для тестирования:
+
+# 1. Минимальный обязательный запрос
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/repositories/search?lang=Python"
+
+# 2. Базовый запрос с лимитом
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/repositories/search?lang=JavaScript&limit=5"
+
+# 3. Запрос с пагинацией (offset)
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/repositories/search?lang=Java&limit=10&offset=20"
+
+# 4. Фильтр по звёздам (только минимум)
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/repositories/search?lang=Go&stars_min=1000&limit=8"
+
+# 5. Фильтр по звёздам (диапазон)
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/repositories/search?lang=Rust&stars_min=500&stars_max=5000&limit=6"
+
+# 6. Фильтр по форкам (только минимум)
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/repositories/search?lang=TypeScript&forks_min=100&limit=12"
+
+# 7. Фильтр по форкам (диапазон)
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/repositories/search?lang=C%2B%2B&forks_min=50&forks_max=500&limit=15"
+
+# 8. Комбинированные фильтры (звёзды + форки)
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/repositories/search?lang=Kotlin&stars_min=100&forks_min=10&limit=7"
+
+# 9. Все параметры вместе
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/repositories/search?lang=Swift&limit=25&offset=5&stars_min=200&stars_max=10000&forks_min=30&forks_max=1000"
+
+# 10. Максимальный лимит (проверка граничного значения)
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/repositories/search?lang=Python&limit=1000&stars_min=10000"

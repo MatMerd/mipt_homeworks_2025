@@ -1,0 +1,14 @@
+services:
+  api: &main_app
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: fastapi_homework:${FASTAPI_HOMEWORK_VERSION:-latest}
+    restart: always
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      FASTAPI_HOMEWORK_HOST: 0.0.0.0
+
+

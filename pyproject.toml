@@ -1,15 +1,118 @@
 [project]
-name = "mipt-homeworks-2025"
+name = "fastapi_homework"
 version = "0.1.0"
-description = "MIPT homeworks from base to production service"
+requires-python = ">=3.12,<4.0"
+description = ""
+authors = []
+maintainers = []
 readme = "README.md"
-license = {text = "Apache License 2.0"}
-requires-python = "==3.13.*"
-dependencies = []
+dependencies = [
+  "fastapi >=0.122.0,<1",
+  "uvicorn[standard] >=0.38.0,<1",
+  "pydantic >=2.12.5,<3",
+  "pydantic-settings >=2.12.0,<3",
+  "yarl >=1.22.0,<2",
+  "ujson >=5.11.0,<6",
+  "httptools >=0.7.1,<1",
+  "pymongo >=4.15.4,<5",
+  "aiofile>=3.9.0",
+]
 
 [dependency-groups]
-lint = [
-    "flakeheaven>=3.3.0",
-    "mypy>=1.18.2",
-    "ruff>=0.14.0",
+dev = [
+  "pytest >=9.0.1,<10",
+  "ruff >=0.14.6,<1",
+  "mypy >=1.19.0,<2",
+  "pre-commit >=4.5.0,<5",
+  "pytest-cov >=7.0.0,<8",
+  "anyio >=4.11.0,<5",
+  "pytest-env >=1.2.0,<2",
+  "httpx >=0.28.1,<1",
+  "isort>=7.0.0",
 ]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+src_paths = ["fastapi_homework"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+ignore_missing_imports = true
+allow_subclassing_any = true
+allow_untyped_calls = true
+pretty = true
+show_error_codes = true
+implicit_reexport = true
+allow_untyped_decorators = true
+warn_unused_ignores = false
+warn_return_any = false
+namespace_packages = true
+
+[tool.pytest.ini_options]
+addopts = "-p no:unraisableexception"
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning",
+    "ignore:.*unclosed.*:ResourceWarning",
+]
+anyio_mode = "auto"
+env = [
+    "FASTAPI_HOMEWORK_ENVIRONMENT=pytest",
+    "FASTAPI_HOMEWORK_DB_BASE=fastapi_homework_test",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+exclude = [".venv/"]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "UP",
+]
+ignore = ["D"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "S101",
+    "PLC0415",
+]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+  "fastapi.Depends",
+  "fastapi.Query",
+]
+
+[fastapi-template.options]
+project_name = "fastapi_homework"
+api_type = "rest"
+enable_redis = "None"
+enable_rmq = "None"
+ci_type = "none"
+enable_migrations = "None"
+enable_taskiq = "None"
+enable_routers = "None"
+enable_kafka = "None"
+enable_loguru = "None"
+traefik_labels = "None"
+add_dummy = "None"
+orm = "none"
+self_hosted_swagger = "None"
+prometheus_enabled = "None"
+sentry_enabled = "None"
+otlp_enabled = "None"
+gunicorn = "None"
+add_users = "None"
+cookie_auth = "None"
+jwt_auth = "None"
