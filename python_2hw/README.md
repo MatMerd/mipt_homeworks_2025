@@ -16,14 +16,6 @@ pip install ruff
 # или
 .\make.bat install
 ```
-
-## Тестирование
-
-Перед запуском рекомендуется запустить тесты:
-
-```bash
-python test_project.py
-```
 ## Запуск
 
 ### PowerShell (Windows)
@@ -116,19 +108,12 @@ CSV файл содержит следующие поля:
 **Вариант 1: Через make-скрипты (Windows):**
 ```powershell
 .\make.ps1 lint-check
-# или
-.\make.bat lint-check
 ```
 
 **Вариант 2: Напрямую (все платформы):**
 ```bash
 python -m ruff check . --fix
 python -m ruff format . --check
-```
-
-**Вариант 3: Linux/Mac с установленным make:**
-```bash
-make lint-check
 ```
 
 ## Структура проекта
