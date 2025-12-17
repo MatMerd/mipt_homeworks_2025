@@ -31,7 +31,7 @@ class GithubClient:
         pages = (total + 99) // 100
         page = 1
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0, headers=self.headers) as client:
             while len(all_repos) < total and page <= pages:
                 pages_per_batch = min(
                     MAX_PARALLEL,
@@ -73,8 +73,7 @@ class GithubClient:
 
         resp = await client.get(
             url,
-            params=params,
-            headers=self.headers
+            params=params
         )
         resp.raise_for_status()
         data = resp.json()
