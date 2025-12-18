@@ -1,9 +1,9 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Depends
 from typing import Optional
+from homework_final.api.deps import get_repository_service
 from homework_final.services.repo_service import RepositoryService
 
 app = FastAPI()
-repo_service = RepositoryService()
 
 
 @app.get("/api/repos")
@@ -15,6 +15,7 @@ async def get_repositories(
     stars_max: Optional[int] = Query(None, description="Макс. количество звезд"),
     forks_min: int = Query(0, description="Мин. количество форков"),
     forks_max: Optional[int] = Query(None, description="Макс. количество форков"),
+    repo_service: RepositoryService = Depends(get_repository_service),
 ):
     filepath = await repo_service.fetch_and_save_repos(
         limit=limit,

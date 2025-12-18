@@ -5,12 +5,11 @@ from homework_final.infrastructure.github_client import GitHubClient
 
 
 class RepositoryService:
-    def __init__(self):
-        self.client = GitHubClient()
-        self.static_dir = "static"
+    def __init__(self, client: GitHubClient, static_dir: str = "static"):
+        self.client = client
+        self.static_dir = static_dir
 
-        if not os.path.exists(self.static_dir):
-            os.makedirs(self.static_dir)
+        os.makedirs(self.static_dir, exist_ok=True)
 
     async def fetch_and_save_repos(
         self,
