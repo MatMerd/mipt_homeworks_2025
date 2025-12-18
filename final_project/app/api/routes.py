@@ -15,7 +15,7 @@ STATIC_DIR = Path(__file__).parent.parent.parent / "static"
 async def search_repositories(
     limit: int = Query(..., gt=0),
     lang: str = Query(...),
-    offset: int = Query(default=0, ge=0),
+    offset: int = Query(..., ge=0),
     stars_min: int = Query(default=0, ge=0),
     stars_max: int | None = Query(default=None, ge=0),
     forks_min: int = Query(default=0, ge=0),

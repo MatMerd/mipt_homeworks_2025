@@ -1,4 +1,4 @@
 .PHONY: lint-check
 
 lint-check:
-	ruff check app/
+	. venv/bin/activate && ruff check app/
