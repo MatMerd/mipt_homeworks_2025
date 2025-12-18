@@ -3,7 +3,8 @@ from typing import Optional, List, Dict, Any
 
 
 class GitHubClient:
-    BASE_URL = "https://api.github.com/search/repositories"
+    def __init__(self, base_url: str):
+        self.base_url = base_url
 
     async def search_repositories(
         self,
@@ -40,7 +41,7 @@ class GitHubClient:
         }
 
         async with httpx.AsyncClient() as client:
-            response = await client.get(self.BASE_URL, params=params)
+            response = await client.get(self.base_url, params=params)
             response.raise_for_status()
             data = response.json()
 
