@@ -13,8 +13,6 @@ def get_github_api_base_url() -> str:
 
 
 def get_github_token() -> str | None:
-    token = os.getenv("GITHUB_TOKEN")
-    print("GITHUB_TOKEN set:", bool(token), "len:", len(token) if token else 0)
     return os.getenv("GITHUB_TOKEN")
 
 
