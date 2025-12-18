@@ -1,0 +1,4 @@
+/static
+/.idea
+*.iml
+__pycache__/
