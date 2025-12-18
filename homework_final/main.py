@@ -15,6 +15,7 @@ async def get_repositories(
     stars_max: Optional[int] = Query(None, description="Макс. количество звезд"),
     forks_min: int = Query(0, description="Мин. количество форков"),
     forks_max: Optional[int] = Query(None, description="Макс. количество форков"),
+    contributor: Optional[str] = Query(None, description="Логин контрибьютера"),
     repo_service: RepositoryService = Depends(get_repository_service),
 ):
     filepath = await repo_service.fetch_and_save_repos(
@@ -25,6 +26,7 @@ async def get_repositories(
         stars_max=stars_max,
         forks_min=forks_min,
         forks_max=forks_max,
+        contributor=contributor,
     )
 
     return {

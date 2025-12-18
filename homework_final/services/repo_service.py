@@ -20,6 +20,7 @@ class RepositoryService:
         stars_max: Optional[int],
         forks_min: int,
         forks_max: Optional[int],
+        contributor: Optional[str] = None,
     ) -> str:
         repos = await self.client.search_repositories(
             limit=limit,
@@ -29,6 +30,7 @@ class RepositoryService:
             stars_max=stars_max,
             forks_min=forks_min,
             forks_max=forks_max,
+            contributor=contributor,
         )
 
         filename = f"repositories_{lang}_{limit}_{offset}.csv"
