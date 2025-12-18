@@ -1,4 +1,4 @@
-SRC_FOLDERS=$(wildcard homework_*)
+SRC_FOLDERS=$(wildcard homework_*) final_project
 
 lint:
 	ruff check $(SRC_FOLDERS)
