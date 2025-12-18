@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Ruff cache
+.ruff_cache/
+
+# Generated CSV files in static/
+static/*.csv
+
+# Large data files
+repositories.csv
+
+# OS
+.DS_Store
+Thumbs.db
