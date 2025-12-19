@@ -1,0 +1,6 @@
+id,name,full_name,html_url,description,language,stargazers_count,forks_count,created_at,updated_at
+481366,gitflow,nvie/gitflow,https://github.com/nvie/gitflow,Git extensions to provide high-level repository operations for Vincent Driessen's branching model.,Shell,26879,2654,2010-01-20T23:14:12Z,2025-12-17T23:30:40Z
+37246537,react-motion,chenglou/react-motion,https://github.com/chenglou/react-motion,A spring that solves your animation problems.,JavaScript,21750,1152,2015-06-11T07:38:23Z,2025-12-18T11:32:53Z
+5830987,joi,hapijs/joi,https://github.com/hapijs/joi,The most powerful data validation library for JS,JavaScript,21188,1512,2012-09-16T16:38:06Z,2025-12-18T11:12:26Z
+321530801,subql,subquery/subql,https://github.com/subquery/subql,"SubQuery is an Open, Flexible, Fast and Universal data indexing framework for web3. Our mission is to help developers create the decentralised products of the future.",TypeScript,18873,385,2020-12-15T02:31:38Z,2025-12-17T02:04:07Z
+2862290,Android-Universal-Image-Loader,nostra13/Android-Universal-Image-Loader,https://github.com/nostra13/Android-Universal-Image-Loader,"Powerful and flexible library for loading, caching and displaying images on Android.",Java,17062,6056,2011-11-27T18:48:23Z,2025-12-18T09:00:53Z
