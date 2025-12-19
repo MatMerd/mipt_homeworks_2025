@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 
 import uvicorn
-from github_repo_api.settings import settings
+from settings import settings
 
 
 def main() -> None:
