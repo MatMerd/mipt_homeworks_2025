@@ -1,13 +1,13 @@
-import logging
-from typing import AsyncGenerator, Awaitable, Callable
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from github_repo_api.settings import settings
 
 
 @asynccontextmanager
-async def lifespan_setup(app: FastAPI) -> AsyncGenerator[None, None]:  # pragma: no cover
+async def lifespan_setup(
+    app: FastAPI,
+) -> AsyncGenerator[None]:  # pragma: no cover
     """
     Actions to run on application startup.
 

@@ -18,7 +18,7 @@ repos:
             language: system
             pass_filenames: false
             always_run: true
-            args: ["check", "github_repo_api", "tests", "--fix"]
+            args: ["check", "github_repo_api", "--fix"]
 
           - id: mypy
             name: Validate types with MyPy
@@ -28,4 +28,4 @@ repos:
             pass_filenames: false
             args:
               - "github_repo_api"
-              - "tests"
+              - "--explicit-package-bases"

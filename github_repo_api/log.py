@@ -1,8 +1,8 @@
 import logging
 import sys
-from typing import Any, Union
 
 from loguru import logger
+
 from github_repo_api.settings import settings
 
 
@@ -24,7 +24,7 @@ class InterceptHandler(logging.Handler):
         :param record: record to log.
         """
         try:
-            level: Union[str, int] = logger.level(record.levelname).name
+            level: str | int = logger.level(record.levelname).name
         except ValueError:
             level = record.levelno
 
@@ -38,6 +38,7 @@ class InterceptHandler(logging.Handler):
             level,
             record.getMessage(),
         )
+
 
 def configure_logging() -> None:  # pragma: no cover
     """Configures logging."""

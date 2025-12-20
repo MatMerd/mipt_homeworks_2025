@@ -1,21 +1,40 @@
-from typing import Optional, Dict, Any
+from typing import Any, ClassVar
+
 import httpx
 
-class SearchManager:
-    API_PATH = "https://api.github.com/search/repositories"
 
-    def __init__(self, token: Optional[str] = None):
+class SearchManager:
+    """
+    Класс обертка над GitHub API.
+
+    Получает на вход аргументы и возвращает json файл.
+    """
+
+    API_PATH = "https://api.github.com/search/repositories"
+    REPO_STUFF: ClassVar[list[str]] = [
+        "created",
+        "pushed",
+        "topic",
+        "license",
+        "archived",
+        "fork",
+        "is",
+        "size",
+    ]
+
+    def __init__(self, token: str | None = None) -> None:
+        """:param token: Токен для гитхаба (влияет на получаемую информацию)"""
         self.headers = {
             "Accept": "application/vnd.github.v3+json",
-            "User-Agent": "GitHub-Search-Client/1.0"
+            "User-Agent": "GitHub-Search-Client/1.0",
         }
 
         if token:
             self.headers["Authorization"] = f"token {token}"
 
-    def _build_range_filter(self, field: str, min_val: int, max_val: Optional[int]) -> str:
+    def _build_range_filter(self, field: str, min_val: int, max_val: int | None) -> str:
         """
-        Создает фильтр диапазона для GitHub API
+        Создает фильтр диапазона для GitHub API.
 
         Args:
             field: Поле для фильтрации (stars, forks)
@@ -24,128 +43,118 @@ class SearchManager:
         """
         if min_val > 0 and max_val is not None:
             return f"{field}:{min_val}..{max_val}"
-        elif min_val > 0:
+        if min_val > 0:
             return f"{field}:>={min_val}"
-        elif max_val is not None:
+        if max_val is not None:
             return f"{field}:<={max_val}"
         return ""
 
     def build_query(
-            self,
-            lang: Optional[str] = None,
-            stars_min: int = 0,
-            stars_max: Optional[int] = None,
-            forks_min: int = 0,
-            forks_max: Optional[int] = None,
-            **kwargs
+        self,
+        lang: str | None = None,
+        stars_min: int = 0,
+        stars_max: int | None = None,
+        forks_min: int = 0,
+        forks_max: int | None = None,
+        **kwargs: Any,
     ) -> str:
+        """
+        Обрабатывает аргументы и возвращает строку запрос для GitHub API.
+
+        :param lang: Язык репозитория
+        :param stars_min: Минимальные звезды
+        :param stars_max: Максимальные звезды
+        :param forks_min: Минимальные форки
+        :param forks_max: Максимальные форки
+        :param kwargs:
+        :return: Строка-запрос для GitHub API
+        """
         query_parts = []
 
         # Основной текст запроса
-        if "q" in kwargs and kwargs["q"]:
+        if kwargs.get("q"):
             query_parts.append(kwargs["q"])
 
         # Фильтр по языку
         if lang:
             query_parts.append(f"language:{lang}")
-        elif "language" in kwargs and kwargs["language"]:
+        elif kwargs.get("language"):
             query_parts.append(f"language:{kwargs['language']}")
 
         # Фильтр по звёздам
         stars_filter = self._build_range_filter("stars", stars_min, stars_max)
         if stars_filter:
             query_parts.append(stars_filter)
-        elif "stars" in kwargs and kwargs["stars"]:
+        elif kwargs.get("stars"):
             query_parts.append(f"stars:{kwargs['stars']}")
 
         # Фильтр по форкам
         forks_filter = self._build_range_filter("forks", forks_min, forks_max)
         if forks_filter:
             query_parts.append(forks_filter)
-        elif "forks" in kwargs and kwargs["forks"]:
+        elif kwargs.get("forks"):
             query_parts.append(f"forks:{kwargs['forks']}")
 
-        # Фильтр по дате создания
-        if "created" in kwargs and kwargs["created"]:
-            query_parts.append(f"created:{kwargs['created']}")
-
-        # Фильтр по дате последнего пуша
-        if "pushed" in kwargs and kwargs["pushed"]:
-            query_parts.append(f"pushed:{kwargs['pushed']}")
-
-        # Фильтр по теме
-        if "topic" in kwargs and kwargs["topic"]:
-            query_parts.append(f"topic:{kwargs['topic']}")
-
-        # Фильтр по лицензии
-        if "license" in kwargs and kwargs["license"]:
-            query_parts.append(f"license:{kwargs['license']}")
-
-        # Архивные репозитории
-        if "archived" in kwargs and kwargs["archived"]:
-            query_parts.append("archived:true")
-        elif "archived" in kwargs and not kwargs["archived"]:
-            query_parts.append("archived:false")
-
-        # Только форки
-        if "fork" in kwargs and kwargs["fork"]:
-            query_parts.append("fork:true")
-
-        # Публичные/приватные
-        if "is" in kwargs and kwargs["is"]:
-            query_parts.append(f"is:{kwargs['is']}")
-
-        # Фильтр по размеру
-        if "size" in kwargs and kwargs["size"]:
-            query_parts.append(f"size:{kwargs['size']}")
+        for param in SearchManager.REPO_STUFF:
+            if kwargs.get(param):
+                query_parts.append(f"{param}:{kwargs[param]}")
 
         return " ".join(query_parts)
 
     async def search(
-            self,
-            limit: int,
-            offset: int,
-            lang: Optional[str] = None,
-            stars_min: int = 0,
-            stars_max: Optional[int] = None,
-            forks_min: int = 0,
-            forks_max: Optional[int] = None,
-            **additional_params) -> Dict[str, Any]:
+        self,
+        limit: int,
+        offset: int,
+        lang: str | None = None,
+        stars_min: int = 0,
+        stars_max: int | None = None,
+        forks_min: int = 0,
+        forks_max: int | None = None,
+        **additional_params: Any,
+    ) -> dict[str, Any]:
+        """
+        Получает параметры извне и выдает json ответ от GitHub API.
+
+        :param limit: число реп в ответе (не более 100)
+        :param offset: сдвиг, если реп больше чем limit
+        :param lang: язык репозитория
+        :param stars_min: минимальное число звезд
+        :param stars_max: максимальное число звезд
+        :param forks_min: минимальное число форков
+        :param forks_max: максимальное число форков
+        :param additional_params:
+
+        :return: json ответ GitHub API
+        """
 
         # Валидация параметров
         if limit <= 0 or limit > 100:
             limit = min(max(1, limit), 100)  # Ограничение GitHub: 100 на страницу
 
-        if offset < 0:
-            offset = 0
+        offset = max(offset, 0)
 
-        # Преобразуем offset в page для GitHub API
-        # GitHub API использует пагинацию по страницам
         page = (offset // limit) + 1
 
-        # Строим поисковый запрос с новыми параметрами
         search_query = self.build_query(
             lang=lang,
             stars_min=stars_min,
             stars_max=stars_max,
             forks_min=forks_min,
             forks_max=forks_max,
-            **additional_params
+            **additional_params,
         )
 
-        params = {
+        params: dict[str, Any] = {
             "q": search_query,
-            "sort": "stars",  # Сортировка по звездам по умолчанию
-            "order": "desc",  # По убыванию по умолчанию
+            "sort": "stars",
+            "order": "desc",
             "per_page": limit,
-            "page": page
+            "page": page,
         }
 
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                SearchManager.API_PATH,
-                headers=self.headers,
-                params=params
+                SearchManager.API_PATH, headers=self.headers, params=params
             )
 
             response.raise_for_status()

@@ -1,14 +1,11 @@
-import os
 import enum
 from pathlib import Path
 from tempfile import gettempdir
-from typing import List, Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from yarl import URL
-
 TEMP_DIR = Path(gettempdir())
+
 
 class LogLevel(enum.StrEnum):
     """Possible log levels."""
@@ -40,14 +37,12 @@ class Settings(BaseSettings):
     environment: str = "dev"
 
     log_level: LogLevel = LogLevel.INFO
-    
 
     model_config = SettingsConfigDict(
-        env_file = ".env",
-        env_prefix = "GITHUB_REPO_API_",
-        env_file_encoding = "utf-8",
+        env_file=".env",
+        env_prefix="GITHUB_REPO_API_",
+        env_file_encoding="utf-8",
     )
-
 
 
 settings = Settings()
