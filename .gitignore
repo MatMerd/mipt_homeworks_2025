@@ -1,6 +1,16 @@
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
+=======
+### Python template
+
+.idea/
+.vscode/
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+>>>>>>> 1c5a66e (initial commit)
 *$py.class
 
 # C extensions
@@ -46,7 +56,11 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
+<<<<<<< HEAD
 *.py.cover
+=======
+*.py,cover
+>>>>>>> 1c5a66e (initial commit)
 .hypothesis/
 .pytest_cache/
 cover/
@@ -58,8 +72,13 @@ cover/
 # Django stuff:
 *.log
 local_settings.py
+<<<<<<< HEAD
 db.sqlite3
 db.sqlite3-journal
+=======
+*.sqlite3
+*.sqlite3-journal
+>>>>>>> 1c5a66e (initial commit)
 
 # Flask stuff:
 instance/
@@ -94,6 +113,7 @@ ipython_config.py
 #   install all needed dependencies.
 #Pipfile.lock
 
+<<<<<<< HEAD
 # UV
 #   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
 #   This is especially recommended for binary packages to ensure reproducibility, and is more
@@ -125,6 +145,9 @@ ipython_config.py
 .pixi
 
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+=======
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+>>>>>>> 1c5a66e (initial commit)
 __pypackages__/
 
 # Celery stuff
@@ -136,7 +159,10 @@ celerybeat.pid
 
 # Environments
 .env
+<<<<<<< HEAD
 .envrc
+=======
+>>>>>>> 1c5a66e (initial commit)
 .venv
 env/
 venv/
@@ -167,6 +193,7 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+<<<<<<< HEAD
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
@@ -208,3 +235,5 @@ __marimo__/
 
 # VSCode
 .vscode
+=======
+>>>>>>> 1c5a66e (initial commit)

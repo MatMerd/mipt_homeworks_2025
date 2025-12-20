@@ -1,0 +1,14 @@
+services:
+  api: &main_app
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: final_project:${FINAL_PROJECT_VERSION:-latest}
+    restart: always
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      FINAL_PROJECT_HOST: 0.0.0.0
+
+
