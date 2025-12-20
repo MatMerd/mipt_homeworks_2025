@@ -50,7 +50,7 @@ async def search_repos(
 
     return Response(
         content=f"Saved with name: {name}",
-        media_type="application/json",
+        media_type="text/plain",
         status_code=200,
     )
 
