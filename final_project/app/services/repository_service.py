@@ -2,15 +2,14 @@ import os
 
 from aiofile import async_open
 
-from app.infrastructure.github_client import github_client
+from app.infrastructure.github_client import GitHubClient
 from app.models import Repository, SearchParams, SearchResponse
-from app.settings import settings
 
 
 class RepositoryService:
-    def __init__(self) -> None:
-        self.client = github_client
-        self.static_dir = settings.static_dir
+    def __init__(self, client: GitHubClient, static_dir: str) -> None:
+        self.client = client
+        self.static_dir = static_dir
 
     def build_query(self, params: SearchParams) -> str:
         query_parts: list[str] = []
@@ -39,17 +38,18 @@ class RepositoryService:
         csv_header = (
             "name,full_name,html_url,description,language,"
             "stargazers_count,forks_count,watchers_count,"
-            "open_issues_count,created_at,updated_at"
+            "open_issues_count,created_at,updated_at,contributors_count"
         )
 
         lines = [csv_header]
         for repo in repositories:
             description = (repo.description or "").replace('"', '""').replace("\n", " ")
+            contributors = repo.contributors_count if repo.contributors_count is not None else ""
             line = (
                 f'"{repo.name}","{repo.full_name}","{repo.html_url}",'
                 f'"{description}","{repo.language or ""}",'
                 f"{repo.stargazers_count},{repo.forks_count},{repo.watchers_count},"
-                f'{repo.open_issues_count},"{repo.created_at}","{repo.updated_at}"'
+                f'{repo.open_issues_count},"{repo.created_at}","{repo.updated_at}",{contributors}'
             )
             lines.append(line)
 
@@ -67,6 +67,8 @@ class RepositoryService:
             query=query,
             limit=params.limit,
             offset=params.offset,
+            contributors_min=params.contributors_min,
+            contributors_max=params.contributors_max,
         )
 
         filename = self.get_filename(params.lang, params.limit, params.offset)
@@ -78,6 +80,3 @@ class RepositoryService:
             saved_count=len(repositories),
             message=f"Successfully saved {len(repositories)} repositories to {filepath}",
         )
-
-
-repository_service = RepositoryService()

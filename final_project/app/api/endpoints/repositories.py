@@ -1,13 +1,17 @@
-from fastapi import APIRouter, HTTPException, Query
+from typing import Annotated
 
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from app.api.depends import Stub
 from app.models import SearchParams, SearchResponse
-from app.services.repository_service import repository_service
+from app.services.repository_service import RepositoryService
 
 router = APIRouter(prefix="/repositories", tags=["repositories"])
 
 
 @router.get("/search", response_model=SearchResponse)
 async def search_repositories(
+    repository_service: Annotated[RepositoryService, Depends(Stub(RepositoryService))],
     limit: int = Query(..., ge=1, le=1000),
     offset: int = Query(0, ge=0),
     lang: str = Query(...),
@@ -15,6 +19,8 @@ async def search_repositories(
     stars_max: int | None = Query(None, ge=0),
     forks_min: int = Query(0, ge=0),
     forks_max: int | None = Query(None, ge=0),
+    contributors_min: int = Query(0, ge=0),
+    contributors_max: int | None = Query(None, ge=0),
 ) -> SearchResponse:
     params = SearchParams(
         limit=limit,
@@ -24,6 +30,8 @@ async def search_repositories(
         stars_max=stars_max,
         forks_min=forks_min,
         forks_max=forks_max,
+        contributors_min=contributors_min,
+        contributors_max=contributors_max,
     )
 
     try:
