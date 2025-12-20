@@ -237,6 +237,7 @@ dependencies = [
     { name = "aiofiles" },
     { name = "fastapi" },
     { name = "httptools" },
+    { name = "pandas" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pymongo" },
@@ -257,15 +258,13 @@ dev = [
     { name = "pytest-env" },
     { name = "ruff" },
 ]
-github-api = [
-    { name = "pandas" },
-]
 
 [package.metadata]
 requires-dist = [
     { name = "aiofiles", specifier = ">=25.1.0,<26" },
     { name = "fastapi", specifier = ">=0.122.0,<1" },
     { name = "httptools", specifier = ">=0.7.1,<1" },
+    { name = "pandas", specifier = ">=2.3.3" },
     { name = "pydantic", specifier = ">=2.12.5,<3" },
     { name = "pydantic-settings", specifier = ">=2.12.0,<3" },
     { name = "pymongo", specifier = ">=4.15.4,<5" },
@@ -286,7 +285,6 @@ dev = [
     { name = "pytest-env", specifier = ">=1.2.0,<2" },
     { name = "ruff", specifier = ">=0.14.6,<1" },
 ]
-github-api = [{ name = "pandas", specifier = ">=2.3.3" }]
 
 [[package]]
 name = "h11"

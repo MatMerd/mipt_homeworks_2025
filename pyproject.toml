@@ -14,6 +14,7 @@ dependencies = [
   "yarl >=1.22.0,<2",
   "ujson >=5.11.0,<6",
   "aiofiles >=25.1.0,<26",
+  "pandas>=2.3.3",
   "httptools >=0.7.1,<1",
   "pymongo >=4.15.4,<5",
 ]
@@ -29,9 +30,6 @@ dev = [
   "pytest-env >=1.2.0,<2",
   "httpx >=0.28.1,<1",
   "black>=25.12.0",
-]
-github-api = [
-    "pandas>=2.3.3",
 ]
 
 [tool.uv]
