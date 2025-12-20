@@ -1,20 +1,4 @@
 [project]
-<<<<<<< HEAD
-name = "mipt-homeworks-2025"
-version = "0.1.0"
-description = "MIPT homeworks from base to production service"
-readme = "README.md"
-license = {text = "Apache License 2.0"}
-requires-python = "==3.13.*"
-dependencies = []
-
-[dependency-groups]
-lint = [
-    "flakeheaven>=3.3.0",
-    "mypy>=1.18.2",
-    "ruff>=0.14.0",
-]
-=======
 name = "final_project"
 version = "0.1.0"
 requires-python = ">=3.12,<4.0"
@@ -174,4 +158,3 @@ gunicorn = "None"
 add_users = "None"
 cookie_auth = "None"
 jwt_auth = "None"
->>>>>>> 1c5a66e (initial commit)

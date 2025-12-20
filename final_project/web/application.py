@@ -22,7 +22,6 @@ def get_app() -> FastAPI:
         default_response_class=UJSONResponse,
     )
 
-    # Main router for the API.
     app.include_router(router=api_router, prefix="/api")
 
     return app

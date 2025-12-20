@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 from final_project.domain.repository import Repository
 from final_project.infrastructure.csv_writer import RepositoryCsvWriter
@@ -36,19 +35,19 @@ class RepositorySearchService:
         page = params.offset // per_page + 1
         skip = params.offset % per_page
 
-        q = self._build_query(params)
+        query = self._build_query(params)
         collected: list[Repository] = []
 
         while len(collected) < params.limit:
             payload = await self.client.search_repositories_page(
-                q=q, per_page=per_page, page=page
+                query=query, per_page=per_page, page=page
             )
             items = payload.get("items") or []
             if not items:
                 break
 
             for item in items[skip:]:
-                collected.append(self._to_repository(item))
+                collected.append(Repository.from_github_item(item))
                 if len(collected) >= params.limit:
                     break
 
@@ -72,36 +71,6 @@ class RepositorySearchService:
             else f"forks:>={params.forks_min}"
         )
         return f"language:{lang} {stars} {forks}"
-
-    @staticmethod
-    def _to_repository(item: dict[str, Any]) -> Repository:
-        license_info = item.get("license") or {}
-        return Repository(
-            name=str(item.get("name") or ""),
-            description=item.get("description"),
-            url=str(item.get("html_url") or ""),
-            created_at=str(item.get("created_at") or ""),
-            updated_at=str(item.get("updated_at") or ""),
-            homepage=item.get("homepage") or None,
-            size=int(item.get("size") or 0),
-            stars=int(item.get("stargazers_count") or 0),
-            forks=int(item.get("forks_count") or 0),
-            issues=int(item.get("open_issues_count") or 0),
-            watchers=int(item.get("watchers_count") or 0),
-            language=item.get("language") or None,
-            license=(license_info.get("spdx_id") or None),
-            topics=Repository.coerce_topics(item.get("topics")),
-            has_issues=bool(item.get("has_issues") or False),
-            has_projects=bool(item.get("has_projects") or False),
-            has_downloads=bool(item.get("has_downloads") or False),
-            has_wiki=bool(item.get("has_wiki") or False),
-            has_pages=bool(item.get("has_pages") or False),
-            has_discussions=bool(item.get("has_discussions") or False),
-            is_fork=bool(item.get("fork") or False),
-            is_archived=bool(item.get("archived") or False),
-            is_template=bool(item.get("is_template") or False),
-            default_branch=str(item.get("default_branch") or ""),
-        )
 
     @staticmethod
     def _slug(value: str) -> str:

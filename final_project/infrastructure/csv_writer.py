@@ -17,10 +17,7 @@ class RepositoryCsvWriter:
 
     def header(self) -> list[str]:
         """Return CSV header in the expected order."""
-        return [
-            Repository.attr_to_csv_key(field)
-            for field in Repository.__dataclass_fields__
-        ]
+        return Repository.csv_header()
 
     async def write(self, *, path: Path, repositories: Iterable[Repository]) -> int:
         """Write repositories to CSV and return number of written rows."""
@@ -32,10 +29,8 @@ class RepositoryCsvWriter:
             await file.write(self._csv_line(header))
 
             for repo in repositories:
-                row = [
-                    self._cell(getattr(repo, Repository.csv_key_to_attr(key)))
-                    for key in header
-                ]
+                row_dict = repo.as_csv_dict()
+                row = [self._cell(row_dict[key]) for key in header]
                 await file.write(self._csv_line(row))
                 written += 1
 

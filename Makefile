@@ -1,16 +1,27 @@
-SRC_FOLDERS=$(wildcard homework_*)
+SHELL:=/usr/bin/env bash
 
+.PHONY: serve
+serve:
+	uv run -m final_project
+
+.PHONY: lint
 lint:
-	ruff check $(SRC_FOLDERS)
-# 	flakeheaven lint $(SRC_FOLDERS)
-	mypy $(SRC_FOLDERS)
-	@make lint-format
+	uv run ruff check --exit-non-zero-on-fix
+	uv run ruff format --check --diff
+	uv run python -m mypy ${PWD}
 
+.PHONY: format
 format:
-	ruff format $(SRC_FOLDERS)
+	uv run ruff format
 
-fix:
-	ruff check $(SRC_FOLDERS) --fix
+.PHONY: unit
+unit:
+	uv run python -m pytest
 
-lint-format:
-	ruff format $(SRC_FOLDERS) --check
+.PHONY: package
+package:
+	uv run pip check
+
+.PHONY: test
+test: lint unit
+

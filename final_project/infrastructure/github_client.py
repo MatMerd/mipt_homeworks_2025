@@ -24,7 +24,7 @@ class GitHubSearchClient:
     async def search_repositories_page(
         self,
         *,
-        q: str,
+        query: str,
         per_page: int,
         page: int,
         sort: str = "stars",
@@ -40,7 +40,7 @@ class GitHubSearchClient:
             headers["Authorization"] = f"Bearer {settings.github_token}"
 
         params: dict[str, str | int] = {
-            "q": q,
+            "q": query,
             "per_page": per_page,
             "page": page,
             "sort": sort,
