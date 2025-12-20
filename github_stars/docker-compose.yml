@@ -1,0 +1,30 @@
+services:
+  api: &main_app
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: github_stars:${GITHUB_STARS_VERSION:-latest}
+    restart: always
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      GITHUB_STARS_HOST: 0.0.0.0
+      GITHUB_STARS_REDIS_HOST: github_stars-redis
+
+  redis:
+    image: redis:8.4.0
+    hostname: "github_stars-redis"
+    restart: always
+    environment:
+      ALLOW_EMPTY_PASSWORD: "yes"
+    healthcheck:
+      test: redis-cli ping
+      interval: 1s
+      timeout: 3s
+      retries: 50
+
+

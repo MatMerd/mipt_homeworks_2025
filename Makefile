@@ -1,16 +1,6 @@
-SRC_FOLDERS=$(wildcard homework_*)
+SUBDIR := github_stars
 
-lint:
-	ruff check $(SRC_FOLDERS)
-# 	flakeheaven lint $(SRC_FOLDERS)
-	mypy $(SRC_FOLDERS)
-	@make lint-format
+.PHONY: format format-check ruff mypy pyrefly test lint lint-check run
 
-format:
-	ruff format $(SRC_FOLDERS)
-
-fix:
-	ruff check $(SRC_FOLDERS) --fix
-
-lint-format:
-	ruff format $(SRC_FOLDERS) --check
+format format-check ruff mypy pyrefly test lint lint-check run:
+	$(MAKE) -C $(SUBDIR) $@
