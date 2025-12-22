@@ -1,29 +1,23 @@
-from typing import Any, ClassVar
+from typing import Any
 
 import httpx
 
 
 class SearchManager:
-    """
-    Класс обертка над GitHub API.
+    """Клиент для GitHub Search API."""
 
-    Получает на вход аргументы и возвращает json файл.
-    """
+    def __init__(
+        self,
+        api_url: str = "https://api.github.com/search/repositories",
+        token: str | None = None,
+    ) -> None:
+        """
+        Инициализирует клиент GitHub Search API.
 
-    API_PATH = "https://api.github.com/search/repositories"
-    REPO_STUFF: ClassVar[list[str]] = [
-        "created",
-        "pushed",
-        "topic",
-        "license",
-        "archived",
-        "fork",
-        "is",
-        "size",
-    ]
-
-    def __init__(self, token: str | None = None) -> None:
-        """:param token: Токен для гитхаба (влияет на получаемую информацию)"""
+        :param api_url: URL GitHub API (можно инжектировать для тестов)
+        :param token: Токен GitHub для аутентификации (опционально)
+        """
+        self.api_url = api_url
         self.headers = {
             "Accept": "application/vnd.github.v3+json",
             "User-Agent": "GitHub-Search-Client/1.0",
@@ -32,130 +26,39 @@ class SearchManager:
         if token:
             self.headers["Authorization"] = f"token {token}"
 
-    def _build_range_filter(self, field: str, min_val: int, max_val: int | None) -> str:
-        """
-        Создает фильтр диапазона для GitHub API.
-
-        Args:
-            field: Поле для фильтрации (stars, forks)
-            min_val: Минимальное значение
-            max_val: Максимальное значение или None
-        """
-        if min_val > 0 and max_val is not None:
-            return f"{field}:{min_val}..{max_val}"
-        if min_val > 0:
-            return f"{field}:>={min_val}"
-        if max_val is not None:
-            return f"{field}:<={max_val}"
-        return ""
-
-    def build_query(
+    async def search_repositories(
         self,
-        lang: str | None = None,
-        stars_min: int = 0,
-        stars_max: int | None = None,
-        forks_min: int = 0,
-        forks_max: int | None = None,
-        **kwargs: Any,
-    ) -> str:
-        """
-        Обрабатывает аргументы и возвращает строку запрос для GitHub API.
-
-        :param lang: Язык репозитория
-        :param stars_min: Минимальные звезды
-        :param stars_max: Максимальные звезды
-        :param forks_min: Минимальные форки
-        :param forks_max: Максимальные форки
-        :param kwargs:
-        :return: Строка-запрос для GitHub API
-        """
-        query_parts = []
-
-        # Основной текст запроса
-        if kwargs.get("q"):
-            query_parts.append(kwargs["q"])
-
-        # Фильтр по языку
-        if lang:
-            query_parts.append(f"language:{lang}")
-        elif kwargs.get("language"):
-            query_parts.append(f"language:{kwargs['language']}")
-
-        # Фильтр по звёздам
-        stars_filter = self._build_range_filter("stars", stars_min, stars_max)
-        if stars_filter:
-            query_parts.append(stars_filter)
-        elif kwargs.get("stars"):
-            query_parts.append(f"stars:{kwargs['stars']}")
-
-        # Фильтр по форкам
-        forks_filter = self._build_range_filter("forks", forks_min, forks_max)
-        if forks_filter:
-            query_parts.append(forks_filter)
-        elif kwargs.get("forks"):
-            query_parts.append(f"forks:{kwargs['forks']}")
-
-        for param in SearchManager.REPO_STUFF:
-            if kwargs.get(param):
-                query_parts.append(f"{param}:{kwargs[param]}")
-
-        return " ".join(query_parts)
-
-    async def search(
-        self,
-        limit: int,
-        offset: int,
-        lang: str | None = None,
-        stars_min: int = 0,
-        stars_max: int | None = None,
-        forks_min: int = 0,
-        forks_max: int | None = None,
-        **additional_params: Any,
+        params: dict[str, Any],
     ) -> dict[str, Any]:
         """
-        Получает параметры извне и выдает json ответ от GitHub API.
+        Выполняет поиск репозиториев через GitHub API.
 
-        :param limit: число реп в ответе (не более 100)
-        :param offset: сдвиг, если реп больше чем limit
-        :param lang: язык репозитория
-        :param stars_min: минимальное число звезд
-        :param stars_max: максимальное число звезд
-        :param forks_min: минимальное число форков
-        :param forks_max: максимальное число форков
-        :param additional_params:
-
-        :return: json ответ GitHub API
+        :param params: Параметры поиска (уже валидированные и подготовленные)
+        :return: JSON ответ от GitHub API
+        :raises RuntimeError: При ошибках API или сети
         """
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            try:
+                response = await client.get(
+                    self.api_url,
+                    headers=self.headers,
+                    params=params,
+                )
+                response.raise_for_status()
+                return response.json()
 
-        # Валидация параметров
-        if limit <= 0 or limit > 100:
-            limit = min(max(1, limit), 100)  # Ограничение GitHub: 100 на страницу
-
-        offset = max(offset, 0)
-
-        page = (offset // limit) + 1
-
-        search_query = self.build_query(
-            lang=lang,
-            stars_min=stars_min,
-            stars_max=stars_max,
-            forks_min=forks_min,
-            forks_max=forks_max,
-            **additional_params,
-        )
-
-        params: dict[str, Any] = {
-            "q": search_query,
-            "sort": "stars",
-            "order": "desc",
-            "per_page": limit,
-            "page": page,
-        }
-
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                SearchManager.API_PATH, headers=self.headers, params=params
-            )
-
-            response.raise_for_status()
-            return response.json()
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 403:
+                    raise RuntimeError(
+                        "GitHub API rate limit exceeded. Please try again later."
+                    ) from None
+                if e.response.status_code == 422:
+                    query = params.get("q", "")
+                    raise ValueError(f"Invalid search query: {query}") from None
+                raise RuntimeError(
+                    f"GitHub API error: {e.response.status_code} - {e.response.text}"
+                ) from None
+            except httpx.RequestError as e:
+                raise RuntimeError(
+                    f"Network error while calling GitHub API: {e!s}"
+                ) from None

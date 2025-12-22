@@ -1,5 +1,6 @@
 import uvicorn
-from settings import settings
+
+from github_repo_api.settings import settings
 
 
 def main() -> None:

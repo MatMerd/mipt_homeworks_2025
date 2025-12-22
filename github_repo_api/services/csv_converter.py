@@ -8,7 +8,7 @@ class CSVConverter:
     """
     Класс для обработки json ответа от Github API.
 
-    Переводит json в csv.
+    Переводит json в csv
     """
 
     COLUMNS: ClassVar[list[str]] = [
@@ -53,10 +53,12 @@ class CSVConverter:
         :return: абсолютный путь до файла csv
         """
 
-        current_path = Path(__file__).resolve()
-        parent_dir = current_path.parent.parent
+        project_root = Path(__file__).resolve().parent.parent.parent
+        static_dir = project_root / dirname
 
-        return f"{parent_dir}/{dirname}/{filename}"
+        static_dir.mkdir(exist_ok=True)
+
+        return str(static_dir / filename)
 
     def save_csv(self, name: str = "default.csv") -> None:
         """
