@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Query
 
 from github_stars.services.github_repos.service import (
     GitHubReposExportService,
@@ -19,7 +19,7 @@ def get_export_service(request: Request) -> GitHubReposExportService:
 
 @router.get("/export")
 async def export_repos(
-    params: RepoSearchParams = Depends(),
+    params: RepoSearchParams = Query(),
     svc: GitHubReposExportService = Depends(get_export_service),
 ) -> dict[str, str]:
     """

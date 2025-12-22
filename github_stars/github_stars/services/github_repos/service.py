@@ -26,7 +26,7 @@ class RepoSearchParams(BaseModel):
     lang: str = Field(..., min_length=1, description="Programming language")
 
     topics: list[str] = Field(
-        default_factory=list,
+        default=[],
         description="Repository topics. Repeat query parameter: topics=python&topics=fastapi",
     )
 
