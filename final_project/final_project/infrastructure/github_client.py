@@ -8,25 +8,25 @@ class GitHubClient:
     """Client for GitHub REST API."""
 
     def __init__(
-        self,
-        base_url: str,
-        api_base_url: str = "https://api.github.com",
-        token: str | None = None,
+            self,
+            client: httpx.AsyncClient,
+            base_url: str,
+            api_base_url: str = "https://api.github.com",
     ) -> None:
+        self.client = client
         self.base_url = base_url
         self.api_base_url = api_base_url
-        self.token = token
 
     async def search_repositories(
-        self,
-        limit: int,
-        offset: int,
-        lang: str,
-        stars_min: int = 0,
-        stars_max: int | None = None,
-        forks_min: int = 0,
-        forks_max: int | None = None,
-        contributor: str | None = None,
+            self,
+            limit: int,
+            offset: int,
+            lang: str,
+            stars_min: int = 0,
+            stars_max: int | None = None,
+            forks_min: int = 0,
+            forks_max: int | None = None,
+            contributor: str | None = None,
     ) -> list[dict[str, Any]]:
         """Search GitHub repositories with optional contributor filtering."""
         query_parts = []
@@ -53,40 +53,36 @@ class GitHubClient:
             "page": page,
         }
 
-        headers = {}
-        if self.token:
-            headers["Authorization"] = f"Bearer {self.token}"
+        response = await self.client.get(self.base_url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        items = data.get("items", [])
 
-        async with httpx.AsyncClient(headers=headers) as client:
-            response = await client.get(self.base_url, params=params)
-            response.raise_for_status()
-            data = response.json()
-            items = data.get("items", [])
+        if not contributor:
+            return items
 
-            if not contributor:
-                return items
+        contributor_lc = contributor.lower()
+        sem = asyncio.Semaphore(10)
 
-            contributor_lc = contributor.lower()
-            sem = asyncio.Semaphore(10)
+        async def repo_has_contributor(repo: dict[str, Any]) -> bool:
+            full_name = repo.get("full_name")
+            if not full_name:
+                return False
 
-            async def repo_has_contributor(repo: dict[str, Any]) -> bool:
-                full_name = repo.get("full_name")
-                if not full_name:
+            url = f"{self.api_base_url}/repos/{full_name}/contributors"
+            async with sem:
+                r = await self.client.get(url, params={"per_page": 100, "page": 1})
+                if r.status_code == 404:
                     return False
+                r.raise_for_status()
+                contributors = r.json() or []
+                return any(
+                    (c.get("login") or "").lower() == contributor_lc
+                    for c in contributors
+                )
 
-                url = f"{self.api_base_url}/repos/{full_name}/contributors"
-                async with sem:
-                    r = await client.get(url, params={"per_page": 100, "page": 1})
-                    if r.status_code == 404:
-                        return False
-                    r.raise_for_status()
-                    contributors = r.json() or []
-                    return any(
-                        (c.get("login") or "").lower() == contributor_lc
-                        for c in contributors
-                    )
+        checks = await asyncio.gather(
+            *(repo_has_contributor(repo) for repo in items)
+        )
 
-            checks = await asyncio.gather(
-                *(repo_has_contributor(repo) for repo in items)
-            )
         return [repo for repo, ok in zip(items, checks, strict=True) if ok]

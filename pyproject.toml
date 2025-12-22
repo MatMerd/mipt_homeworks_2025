@@ -5,7 +5,13 @@ description = "MIPT homeworks from base to production service"
 readme = "README.md"
 license = {text = "Apache License 2.0"}
 requires-python = "==3.13.*"
-dependencies = []
+dependencies = [
+    "fastapi>=0.127.0",
+    "httpx>=0.28.1",
+    "pydantic-settings>=2.12.0",
+    "ujson==5.11.0",
+    "uvicorn>=0.40.0",
+]
 
 [dependency-groups]
 lint = [
