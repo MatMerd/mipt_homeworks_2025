@@ -1,6 +1,7 @@
 from typing import Any, cast
 
 import httpx
+import re
 
 from app.models import GitHubSearchParams, Repository
 
@@ -14,6 +15,10 @@ class GitHubClient:
         }
         if token:
             self.headers["Authorization"] = f"Bearer {token}"
+        self._client = httpx.AsyncClient(headers=self.headers, timeout=30.0)
+
+    async def aclose(self) -> None:
+        await self._client.aclose()
 
     async def search_repositories(
         self,
@@ -28,39 +33,31 @@ class GitHubClient:
             "page": search_params.page,
         }
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                url,
-                params=params,
-                headers=self.headers,
-                timeout=30.0,
-            )
-            response.raise_for_status()
-            return cast(dict[str, Any], response.json())
+        response = await self._client.get(
+            url,
+            params=params,
+        )
+        response.raise_for_status()
+        return cast(dict[str, Any], response.json())
 
     async def get_contributors_count(self, owner: str, repo: str) -> int:
         url = f"{self.base_url}/repos/{owner}/{repo}/contributors"
         params = {"per_page": 1, "anon": "true"}
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                url,
-                params=params,
-                headers=self.headers,
-                timeout=30.0,
-            )
-            if response.status_code == 204:
-                return 0
-            response.raise_for_status()
+        response = await self._client.get(
+            url,
+            params=params,
+        )
+        if response.status_code == 204:
+            return 0
+        response.raise_for_status()
 
-            link_header = response.headers.get("Link", "")
-            if 'rel="last"' in link_header:
-                import re
-
-                match = re.search(r'page=(\d+)>; rel="last"', link_header)
-                if match:
-                    return int(match.group(1))
-            return len(response.json())
+        link_header = response.headers.get("Link", "")
+        if 'rel="last"' in link_header:
+            match = re.search(r'page=(\d+)>; rel="last"', link_header)
+            if match:
+                return int(match.group(1))
+        return len(response.json())
 
     async def fetch_all_repositories(
         self,
