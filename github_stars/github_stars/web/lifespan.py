@@ -10,7 +10,10 @@ from fastapi import FastAPI
 
 import github_stars
 from github_stars.infrastructure.github_client import GitHubClient
-from github_stars.services.github_repos.service import GitHubReposExportService
+from github_stars.services.github_repos.service import (
+    GitHubReposExportService,
+    CsvWriterService,
+)
 from github_stars.services.redis.lifespan import init_redis, shutdown_redis
 
 
@@ -39,8 +42,12 @@ async def lifespan_setup(
 
     http = httpx.AsyncClient(timeout=30.0)
     github = GitHubClient(http=http, token=token)
+
+    csv_writer = CsvWriterService()
+
     app.state.github_repos_export_service = GitHubReposExportService(
-        github=github,
+        github_client=github,
+        csv_writer=csv_writer,
         static_dir=static_dir,
     )
     app.state.github_http_client = http

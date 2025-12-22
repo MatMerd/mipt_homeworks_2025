@@ -10,8 +10,10 @@ from httpx import ASGITransport, AsyncClient
 from redis.asyncio import ConnectionPool
 
 from github_stars.infrastructure.github_client import GitHubSearchResponse
-from github_stars.services.github_repos.service import GitHubReposExportService
-from github_stars.services.redis.dependency import get_redis_pool
+from github_stars.services.github_repos.service import (
+    GitHubReposExportService,
+    CsvWriterService,
+)
 from github_stars.web.application import get_app
 
 
@@ -90,30 +92,29 @@ def github_repos_export_service(
 ) -> GitHubReposExportService:
     """
     Create export service instance writing CSV.
-
     Files into a temporary static directory.
     """
     static_dir = tmp_path / "static"
-    return GitHubReposExportService(github=fake_github_client, static_dir=static_dir)
+    static_dir.mkdir(parents=True, exist_ok=True)
+
+    csv_writer = CsvWriterService()
+
+    return GitHubReposExportService(
+        github_client=fake_github_client,
+        csv_writer=csv_writer,
+        static_dir=static_dir
+    )
 
 
 @pytest.fixture(scope="session")
 def anyio_backend() -> str:
-    """
-    Backend for anyio pytest plugin.
-
-    :return: backend name.
-    """
+    """Backend for anyio pytest plugin."""
     return "asyncio"
 
 
 @pytest.fixture
 async def fake_redis_pool() -> AsyncGenerator[ConnectionPool]:
-    """
-    Get instance of a fake redis.
-
-    :yield: FakeRedis instance.
-    """
+    """Get instance of a fake redis."""
     server = FakeRedis()
     pool = ConnectionPool(connection_class=FakeConnection, server=server)
 
@@ -127,13 +128,8 @@ def fastapi_app(
     fake_redis_pool: ConnectionPool,
     github_repos_export_service: GitHubReposExportService,
 ) -> FastAPI:
-    """
-    Fixture for creating FastAPI app.
-
-    :return: fastapi app with mocked dependencies.
-    """
+    """Fixture for creating FastAPI app."""
     application = get_app()
-    application.dependency_overrides[get_redis_pool] = lambda: fake_redis_pool
     application.state.github_repos_export_service = github_repos_export_service
     return application
 
@@ -142,12 +138,7 @@ def fastapi_app(
 async def client(
     fastapi_app: FastAPI, anyio_backend: Any
 ) -> AsyncGenerator[AsyncClient]:
-    """
-    Fixture that creates client for requesting server.
-
-    :param fastapi_app: the application.
-    :yield: client for the app.
-    """
+    """Fixture that creates client for requesting server."""
     async with AsyncClient(
         transport=ASGITransport(fastapi_app), base_url="http://test", timeout=2.0
     ) as ac:
