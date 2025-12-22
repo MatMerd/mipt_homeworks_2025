@@ -26,7 +26,7 @@ async def export_repos(
     Export GitHub repositories.
 
     Matching filters to a CSV file in the static directory.
-    Query parameters are parsed into RepoSearchParams.
+    Query parameters are parsed into RepoSearchParams (including `topics`).  # TOPICS FILTER CHANGE
     """
     out: Path = await svc.export(params)
     return {"filename": out.name, "path": str(out)}

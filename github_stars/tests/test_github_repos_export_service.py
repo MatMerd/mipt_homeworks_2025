@@ -1,11 +1,17 @@
+import ast
 import csv
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Protocol
 
 from github_stars.services.github_repos.service import (
     GitHubReposExportService,
     RepoSearchParams,
 )
+
+
+class _GitHubClientWithCalls(Protocol):
+    calls: list[tuple[str, int, int, str, str]]
 
 
 async def _read_rows(path: Path) -> tuple[Sequence[str] | None, list[dict[str, str]]]:
@@ -64,3 +70,20 @@ async def test_export_replaces_newlines_in_description(
     assert len(rows) == 1
     assert "\n" not in rows[0]["Description"]
     assert rows[0]["Description"] == "line1 line2"
+
+
+async def test_export_filters_by_topics(
+    github_repos_export_service: GitHubReposExportService,
+    fake_github_client: _GitHubClientWithCalls,
+) -> None:
+    p = RepoSearchParams(limit=12, offset=0, lang="Python", topics=["a"])
+    out = await github_repos_export_service.export(p)
+
+    _, rows = await _read_rows(out)
+    assert len(rows) == 12
+
+    for row in rows:
+        topics = ast.literal_eval(row["Topics"])
+        assert "a" in topics
+
+    assert any("topic:a" in q for (q, *_rest) in fake_github_client.calls)

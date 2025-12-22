@@ -20,9 +20,15 @@ class RepoSearchParams(BaseModel):
     Parameters for GitHub repository search and CSV export.
     Used as a dependency in FastAPI views to parse Query parameters automatically.
     """
+
     limit: int = Field(..., ge=0, description="Max records to export")
     offset: int = Field(0, ge=0, description="Pagination offset")
     lang: str = Field(..., min_length=1, description="Programming language")
+
+    topics: list[str] = Field(
+        default_factory=list,
+        description="Repository topics. Repeat query parameter: topics=python&topics=fastapi",
+    )
 
     stars_min: int = Field(0, ge=0)
     stars_max: int | None = Field(None, ge=0)
@@ -33,7 +39,7 @@ class RepoSearchParams(BaseModel):
     order: SortOrder = "desc"
 
     @model_validator(mode="after")
-    def _validate_ranges(self) -> RepoSearchParams:
+    def _validate_ranges(self) -> "RepoSearchParams":
         if self.stars_max is not None and self.stars_min > self.stars_max:
             raise ValueError("stars_min must be <= stars_max")
         if self.forks_max is not None and self.forks_min > self.forks_max:
@@ -71,9 +77,11 @@ class RepoReportItem(BaseModel):
     default_branch: str = Field(default="", alias="Default Branch")
 
     @classmethod
-    def from_github_dict(cls, data: dict[str, Any]) -> RepoReportItem:
+    def from_github_dict(cls, data: dict[str, Any]) -> "RepoReportItem":
         license_data = data.get("license") or {}
-        license_spdx = license_data.get("spdx_id") if isinstance(license_data, dict) else ""
+        license_spdx = (
+            license_data.get("spdx_id") if isinstance(license_data, dict) else ""
+        )
 
         desc = data.get("description")
         clean_desc = (desc.replace("\n", " ").strip()) if isinstance(desc, str) else ""
@@ -110,6 +118,7 @@ class RepoReportItem(BaseModel):
 
 class GitHubSearchClient(Protocol):
     """Protocol for GitHub search clients used by the export service."""
+
     async def search_repositories(
         self,
         *,
@@ -152,7 +161,7 @@ class GitHubReposExportService:
         self,
         github_client: GitHubSearchClient,
         csv_writer: CsvWriterService,
-        static_dir: Path
+        static_dir: Path,
     ) -> None:
         self._github = github_client
         self._csv_writer = csv_writer
@@ -160,6 +169,11 @@ class GitHubReposExportService:
 
     def _build_query_string(self, params: RepoSearchParams) -> str:
         parts: list[str] = [f"language:{params.lang}"]
+
+        for t in params.topics:
+            t_clean = t.strip().lower()
+            if t_clean:
+                parts.append(f"topic:{t_clean}")
 
         if params.stars_max is None:
             parts.append(f"stars:>={params.stars_min}")
@@ -180,7 +194,17 @@ class GitHubReposExportService:
         limit = max(0, search_params.limit)
         offset = max(0, search_params.offset)
 
-        filename = f"repositories_{search_params.lang}_{limit}_{offset}.csv"
+        self._static_dir.mkdir(parents=True, exist_ok=True)
+
+        topics_suffix = ""
+        if search_params.topics:
+            safe_topics = "-".join(
+                [t.strip().lower() for t in search_params.topics if t.strip()]
+            )
+            if safe_topics:
+                topics_suffix = f"_topics-{safe_topics}"[:80]
+
+        filename = f"repositories_{search_params.lang}_{limit}_{offset}{topics_suffix}.csv"
         output_path = self._static_dir / filename
 
         if limit == 0:
@@ -202,7 +226,6 @@ class GitHubReposExportService:
         last_page = (fetch_end_index - 1) // per_page + 1
 
         all_raw_items: list[dict[str, Any]] = []
-
         for page in range(first_page, last_page + 1):
             resp = await self._github.search_repositories(
                 q=query_string,
@@ -214,12 +237,15 @@ class GitHubReposExportService:
             all_raw_items.extend(resp.items)
 
         start_slice = offset - (first_page - 1) * per_page
-        sliced_raw_items = all_raw_items[start_slice : start_slice + items_needed_count]
-
-        report_items = [
-            RepoReportItem.from_github_dict(item)
-            for item in sliced_raw_items
+        sliced_raw_items = all_raw_items[
+            start_slice : start_slice + items_needed_count
         ]
+
+        report_items = [RepoReportItem.from_github_dict(item) for item in sliced_raw_items]
+
+        if not report_items:
+            await self._write_empty_csv_with_headers(output_path)
+            return output_path
 
         await self._csv_writer.write_models_to_csv(output_path, report_items)
         return output_path

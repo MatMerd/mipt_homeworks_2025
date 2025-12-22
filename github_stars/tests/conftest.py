@@ -35,12 +35,32 @@ class FakeGitHubClient:
     ) -> GitHubSearchResponse:
         """Return a paginated slice of fake repository items."""
         self.calls.append((q, page, per_page, sort, order))
+
+        required_topics = [
+            part.split(":", 1)[1].strip().lower()
+            for part in q.split()
+            if part.startswith("topic:") and ":" in part
+        ]
+
+        items = self._items
+        if required_topics:
+            req = {t for t in required_topics if t}
+            filtered: list[dict[str, object]] = []
+            for it in items:
+                topics_obj = it.get("topics")
+                if not isinstance(topics_obj, list):
+                    continue
+                topics_norm = {str(x).lower() for x in topics_obj}
+                if req.issubset(topics_norm):
+                    filtered.append(it)
+            items = filtered
+
         start = (page - 1) * per_page
         end = start + per_page
         return GitHubSearchResponse(
-            total_count=len(self._items),
+            total_count=len(items),
             incomplete_results=False,
-            items=self._items[start:end],
+            items=items[start:end],
         )
 
 
@@ -49,6 +69,13 @@ def fake_github_items() -> list[dict[str, object]]:
     """Build a list of fake GitHub repository items for pagination and CSV tests."""
     items: list[dict[str, object]] = []
     for i in range(250):
+        if i % 3 == 0:
+            topics = ["a"]
+        elif i % 3 == 1:
+            topics = ["b"]
+        else:
+            topics = ["a", "b"]
+
         items.append(
             {
                 "name": f"repo{i}",
@@ -64,7 +91,7 @@ def fake_github_items() -> list[dict[str, object]]:
                 "watchers_count": 42,
                 "language": "Python",
                 "license": {"spdx_id": "MIT"},
-                "topics": ["a", "b"],
+                "topics": topics,
                 "has_issues": True,
                 "has_projects": True,
                 "has_downloads": True,
