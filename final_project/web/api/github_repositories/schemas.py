@@ -22,6 +22,9 @@ class SearchRepositoriesParams(BaseModel):
     forks_max: int | None = Field(
         default=None, ge=0, description="Maximum number of forks"
     )
+    license: str | None = Field(
+        default=None, min_length=1, description="License type (e.g., mit, apache-2.0, gpl-3.0)"
+    )
 
     @model_validator(mode="after")
     def validate_ranges(self) -> SearchRepositoriesParams:

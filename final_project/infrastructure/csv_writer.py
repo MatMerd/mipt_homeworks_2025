@@ -49,3 +49,8 @@ class RepositoryCsvWriter:
         if isinstance(value, list):
             return repr(value)
         return value
+
+
+def get_csv_writer() -> RepositoryCsvWriter:
+    """Get CSV writer instance."""
+    return RepositoryCsvWriter()

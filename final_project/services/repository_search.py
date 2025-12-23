@@ -4,8 +4,14 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from final_project.domain.repository import Repository
-from final_project.infrastructure.csv_writer import RepositoryCsvWriter
-from final_project.infrastructure.github_client import GitHubSearchClient
+from final_project.infrastructure.csv_writer import (
+    RepositoryCsvWriter,
+    get_csv_writer
+)
+from final_project.infrastructure.github_client import (
+    GitHubSearchClient,
+    get_github_client,
+)
 from final_project.settings import settings
 from final_project.web.api.github_repositories.schemas import SearchRepositoriesParams
 
@@ -70,15 +76,22 @@ class RepositorySearchService:
             if params.forks_max is not None
             else f"forks:>={params.forks_min}"
         )
-        return f"language:{lang} {stars} {forks}"
+        license_filter = f"license:{params.license}" if params.license else ""
+
+        query_parts = [f"language:{lang}", stars, forks]
+        if license_filter:
+            query_parts.append(license_filter)
+
+        return " ".join(query_parts)
 
     @staticmethod
     def _slug(value: str) -> str:
         return value.strip().replace(" ", "_")
 
 
-def build_repository_search_service() -> RepositorySearchService:
-    """Create a service with default dependencies."""
-    return RepositorySearchService(
-        client=GitHubSearchClient(), writer=RepositoryCsvWriter()
-    )
+def get_repository_search_service(
+    client: GitHubSearchClient = Depends(get_github_client),
+    writer: RepositoryCsvWriter = Depends(get_csv_writer),
+) -> RepositorySearchService:
+    """Get repository search service with dependencies."""
+    return RepositorySearchService(client=client, writer=writer)

@@ -3,6 +3,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from final_project.infrastructure.github_client import get_github_client
+
 
 @asynccontextmanager
 async def lifespan_setup(
@@ -22,3 +24,6 @@ async def lifespan_setup(
     app.middleware_stack = app.build_middleware_stack()
 
     yield
+
+    github_client = get_github_client()
+    await github_client.aclose()
