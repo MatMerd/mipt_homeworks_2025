@@ -1,10 +1,10 @@
 from typing import Any
 
-from config import Settings
-from infrastructure.github_client import GitHubClient
-from repositories.exporter import CsvExporter
-from schemas import SearchRepositoriesRequest, SearchResponse
-from utils.timing import measure_time
+from ..config import Settings
+from ..infrastructure.github_client import GitHubClient
+from ..repositories.exporter import CsvExporter
+from ..schemas import SearchRepositoriesRequest, SearchResponse
+from ..utils.timing import measure_time
 
 
 class RepositoryService:

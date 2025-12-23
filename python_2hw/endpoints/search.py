@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 
-from dependencies import get_repository_service
-from schemas import SearchRepositoriesRequest
-from services.repository_service import RepositoryService
+from ..dependencies import get_repository_service
+from ..schemas import SearchRepositoriesRequest
+from ..services import RepositoryService
 
 router = APIRouter()
 

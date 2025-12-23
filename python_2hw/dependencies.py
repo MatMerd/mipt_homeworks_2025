@@ -1,5 +1,5 @@
-from config import Settings
-from services.repository_service import RepositoryService
+from .config import Settings
+from .services import RepositoryService
 
 
 def get_settings() -> Settings:

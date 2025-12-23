@@ -1,8 +1,8 @@
 import httpx
 from dotenv import load_dotenv
 
-from config import Settings
-from schemas import SearchResponse
+from ..config import Settings
+from ..schemas import SearchResponse
 
 load_dotenv()
 
