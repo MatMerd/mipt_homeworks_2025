@@ -31,10 +31,13 @@ def _build_query(
 
 class RepositorySearchService:
     STATIC_DIR = Path("static")
-    CSV_HEADER = "Repo,Owner,Position Cur,Position Prev,Stars,Watchers,Forks,Open Issues,Language\n"
 
     def __init__(self, github_client: GitHubClient) -> None:
         self._github_client = github_client
+        self._ensure_static_dir()
+
+    def _ensure_static_dir(self) -> None:
+        os.makedirs(self.STATIC_DIR, exist_ok=True)
 
     async def search_and_save(
         self,
@@ -55,13 +58,11 @@ class RepositorySearchService:
         )
 
         repositories: list[Repository] = []
-
-        total_needed = offset + limit
         per_page = 100
-
         page = 1
-        while len(repositories) < total_needed:
-            response = await self._github_client.search_repositories(
+
+        while len(repositories) < limit:
+            repos_batch = await self._github_client.search_repositories_as_models(
                 query=query,
                 sort="stars",
                 order="desc",
@@ -69,42 +70,34 @@ class RepositorySearchService:
                 page=page,
             )
 
-            items = response.get("items", [])
-            if not items:
+            if not repos_batch:
                 break
 
-            for idx, item in enumerate(items):
-                position = (page - 1) * per_page + idx + 1
-                repo = Repository.from_github_item(item, position)
-                repositories.append(repo)
+            repositories.extend(repos_batch)
 
-                if len(repositories) >= total_needed:
-                    break
+            if len(repositories) >= limit:
+                break
 
             page += 1
 
         result_repos = repositories[offset : offset + limit]
+
         for idx, repo in enumerate(result_repos):
-            repo.position_cur = idx + 1
+            repo.position_cur = offset + idx + 1
 
         filename = f"repositories_{lang}_{limit}_{offset}.csv"
         filepath = self.STATIC_DIR / filename
-
-        os.makedirs(self.STATIC_DIR, exist_ok=True)
 
         await self._write_csv(filepath, result_repos)
 
         return str(filepath)
 
     async def _write_csv(self, filepath: Path, repositories: list[Repository]) -> None:
-        async with async_open(filepath, "w") as f:
-            await f.write(self.CSV_HEADER)
 
-            for repo in repositories:
-                position_prev = repo.position_prev if repo.position_prev is not None else ""
-                line = (
-                    f"{repo.repo},{repo.owner},{repo.position_cur},{position_prev},"
-                    f"{repo.stars},{repo.watchers},{repo.forks},{repo.open_issues},"
-                    f"{repo.language or ''}\n"
-                )
-                await f.write(line)
+        lines = [Repository.csv_header()]
+        lines.extend(repo.to_csv_row() for repo in repositories)
+        content = "".join(lines)
+
+        async with async_open(filepath, "w") as f:
+            await f.write(content)
+
