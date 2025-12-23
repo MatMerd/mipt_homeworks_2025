@@ -48,6 +48,11 @@ async def test_export_endpoint_validation_negative_limit(client: AsyncClient) ->
 
 
 async def test_export_endpoint_topics_filter(client: AsyncClient) -> None:
+    """Endpoint accepts `topics` and writes them into the exported CSV.
+
+    When `topics` is provided, exported rows should include that topic in the
+    `Topics` column.
+    """
     resp = await client.get(
         "/api/github-repos/export",
         params={

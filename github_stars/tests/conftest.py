@@ -11,8 +11,8 @@ from redis.asyncio import ConnectionPool
 
 from github_stars.infrastructure.github_client import GitHubSearchResponse
 from github_stars.services.github_repos.service import (
-    GitHubReposExportService,
     CsvWriterService,
+    GitHubReposExportService,
 )
 from github_stars.web.application import get_app
 
@@ -119,6 +119,7 @@ def github_repos_export_service(
 ) -> GitHubReposExportService:
     """
     Create export service instance writing CSV.
+
     Files into a temporary static directory.
     """
     static_dir = tmp_path / "static"

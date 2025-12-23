@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import csv
 import io
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Literal, Protocol, Any, Sequence
+from typing import Any, Literal, Protocol
 
 import aiofiles
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from github_stars.infrastructure.github_client import GitHubSearchResponse
-
 
 SortField = Literal["stars", "forks", "updated"]
 SortOrder = Literal["asc", "desc"]
@@ -18,6 +18,7 @@ SortOrder = Literal["asc", "desc"]
 class RepoSearchParams(BaseModel):
     """
     Parameters for GitHub repository search and CSV export.
+
     Used as a dependency in FastAPI views to parse Query parameters automatically.
     """
 
@@ -27,7 +28,8 @@ class RepoSearchParams(BaseModel):
 
     topics: list[str] = Field(
         default=[],
-        description="Repository topics. Repeat query parameter: topics=python&topics=fastapi",
+        description="Repository topics. "
+        "Repeat query parameter: topics=python&topics=fastapi",
     )
 
     stars_min: int = Field(0, ge=0)
@@ -39,7 +41,7 @@ class RepoSearchParams(BaseModel):
     order: SortOrder = "desc"
 
     @model_validator(mode="after")
-    def _validate_ranges(self) -> "RepoSearchParams":
+    def _validate_ranges(self) -> RepoSearchParams:
         if self.stars_max is not None and self.stars_min > self.stars_max:
             raise ValueError("stars_min must be <= stars_max")
         if self.forks_max is not None and self.forks_min > self.forks_max:
@@ -48,6 +50,12 @@ class RepoSearchParams(BaseModel):
 
 
 class RepoReportItem(BaseModel):
+    """Row model for the exported repositories CSV.
+
+    Fields use CSV column names via `alias=...` to match the required report format.
+    Instances are built from GitHub API payloads and then dumped with `by_alias=True`.
+    """
+
     model_config = ConfigDict(populate_by_name=True)
 
     name: str = Field(..., alias="Name")
@@ -77,7 +85,18 @@ class RepoReportItem(BaseModel):
     default_branch: str = Field(default="", alias="Default Branch")
 
     @classmethod
-    def from_github_dict(cls, data: dict[str, Any]) -> "RepoReportItem":
+    def from_github_dict(cls, data: dict[str, Any]) -> RepoReportItem:
+        """Create a report item from a GitHub Search API repository payload.
+
+        The input is one element from `items[*]` returned by
+        `GET /search/repositories`. The method normalizes optional fields:
+        - replaces newlines in description,
+        - extracts license SPDX id when present,
+        - converts topics list to string for CSV output.
+
+        :param data: Repository dict from GitHub Search API response.
+        :return: Parsed RepoReportItem instance.
+        """
         license_data = data.get("license") or {}
         license_spdx = (
             license_data.get("spdx_id") if isinstance(license_data, dict) else ""
@@ -88,31 +107,33 @@ class RepoReportItem(BaseModel):
 
         topics = data.get("topics") or []
 
-        return cls(
-            name=str(data.get("name") or ""),
-            description=clean_desc,
-            url=str(data.get("html_url") or ""),
-            created_at=str(data.get("created_at") or ""),
-            updated_at=str(data.get("updated_at") or ""),
-            homepage=str(data.get("homepage") or ""),
-            size=int(data.get("size") or 0),
-            stars=int(data.get("stargazers_count") or 0),
-            forks=int(data.get("forks_count") or 0),
-            issues=int(data.get("open_issues_count") or 0),
-            watchers=int(data.get("watchers_count") or 0),
-            language=str(data.get("language") or ""),
-            license=str(license_spdx) if license_spdx else "",
-            topics=str(topics),
-            has_issues=bool(data.get("has_issues")),
-            has_projects=bool(data.get("has_projects")),
-            has_downloads=bool(data.get("has_downloads")),
-            has_wiki=bool(data.get("has_wiki")),
-            has_pages=bool(data.get("has_pages")),
-            has_discussions=bool(data.get("has_discussions")),
-            is_fork=bool(data.get("fork")),
-            is_archived=bool(data.get("archived")),
-            is_template=bool(data.get("is_template")),
-            default_branch=str(data.get("default_branch") or ""),
+        return cls.model_validate(
+            {
+                "name": str(data.get("name") or ""),
+                "description": clean_desc,
+                "url": str(data.get("html_url") or ""),
+                "created_at": str(data.get("created_at") or ""),
+                "updated_at": str(data.get("updated_at") or ""),
+                "homepage": str(data.get("homepage") or ""),
+                "size": int(data.get("size") or 0),
+                "stars": int(data.get("stargazers_count") or 0),
+                "forks": int(data.get("forks_count") or 0),
+                "issues": int(data.get("open_issues_count") or 0),
+                "watchers": int(data.get("watchers_count") or 0),
+                "language": str(data.get("language") or ""),
+                "license": str(license_spdx) if license_spdx else "",
+                "topics": str(topics),
+                "has_issues": bool(data.get("has_issues")),
+                "has_projects": bool(data.get("has_projects")),
+                "has_downloads": bool(data.get("has_downloads")),
+                "has_wiki": bool(data.get("has_wiki")),
+                "has_pages": bool(data.get("has_pages")),
+                "has_discussions": bool(data.get("has_discussions")),
+                "is_fork": bool(data.get("fork")),
+                "is_archived": bool(data.get("archived")),
+                "is_template": bool(data.get("is_template")),
+                "default_branch": str(data.get("default_branch") or ""),
+            }
         )
 
 
@@ -136,12 +157,25 @@ class CsvWriterService:
     """Service responsible specifically for writing Pydantic models to CSV."""
 
     async def write_models_to_csv(self, path: Path, items: Sequence[BaseModel]) -> None:
+        """Write a sequence of Pydantic models to a CSV file.
+
+        The header is derived from the model class fields (using aliases when present).
+        Rows are written via `model_dump(by_alias=True)`.
+
+        If `items` is empty, an empty file is created.
+
+        :param path: Output CSV file path.
+        :param items: Models to serialize (one CSV row per model).
+        :return: None.
+        """
         if not items:
             async with aiofiles.open(path, "w", encoding="utf-8") as f:
                 await f.write("")
             return
 
-        headers = [field.alias or name for name, field in items[0].model_fields.items()]
+        headers = [
+            field.alias or name for name, field in type(items[0]).model_fields.items()
+        ]
 
         buf = io.StringIO()
         writer = csv.DictWriter(buf, fieldnames=headers)
@@ -188,9 +222,7 @@ class GitHubReposExportService:
         return " ".join(parts)
 
     async def export(self, search_params: RepoSearchParams) -> Path:
-        """
-        Fetch repositories from GitHub search API and write them to a CSV file.
-        """
+        """Fetch repositories from GitHub search API and write them to a CSV file."""
         limit = max(0, search_params.limit)
         offset = max(0, search_params.offset)
 
@@ -204,7 +236,9 @@ class GitHubReposExportService:
             if safe_topics:
                 topics_suffix = f"_topics-{safe_topics}"[:80]
 
-        filename = f"repositories_{search_params.lang}_{limit}_{offset}{topics_suffix}.csv"
+        filename = (
+            f"repositories_{search_params.lang}_{limit}_{offset}{topics_suffix}.csv"
+        )
         output_path = self._static_dir / filename
 
         if limit == 0:
@@ -237,11 +271,11 @@ class GitHubReposExportService:
             all_raw_items.extend(resp.items)
 
         start_slice = offset - (first_page - 1) * per_page
-        sliced_raw_items = all_raw_items[
-            start_slice : start_slice + items_needed_count
-        ]
+        sliced_raw_items = all_raw_items[start_slice : start_slice + items_needed_count]
 
-        report_items = [RepoReportItem.from_github_dict(item) for item in sliced_raw_items]
+        report_items = [
+            RepoReportItem.from_github_dict(item) for item in sliced_raw_items
+        ]
 
         if not report_items:
             await self._write_empty_csv_with_headers(output_path)
@@ -252,7 +286,9 @@ class GitHubReposExportService:
 
     async def _write_empty_csv_with_headers(self, path: Path) -> None:
         """Helper to satisfy tests expecting headers even when rows are empty."""
-        headers = [field.alias or name for name, field in RepoReportItem.model_fields.items()]
+        headers = [
+            field.alias or name for name, field in RepoReportItem.model_fields.items()
+        ]
         buf = io.StringIO()
         writer = csv.DictWriter(buf, fieldnames=headers)
         writer.writeheader()

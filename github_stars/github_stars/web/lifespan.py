@@ -11,8 +11,8 @@ from fastapi import FastAPI
 import github_stars
 from github_stars.infrastructure.github_client import GitHubClient
 from github_stars.services.github_repos.service import (
-    GitHubReposExportService,
     CsvWriterService,
+    GitHubReposExportService,
 )
 from github_stars.services.redis.lifespan import init_redis, shutdown_redis
 

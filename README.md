@@ -5,13 +5,15 @@
 CSV создаётся по пути:
 
 - `github_stars/static/repositories_{lang}_{limit}_{offset}.csv`
+- если задан(ы) `topics`, имя будет с суффиксом:
+  - `github_stars/static/repositories_{lang}_{limit}_{offset}_topics-{topic1}-{topic2}....csv`
 
-> Файл **перезаписывается**, если вызвать ручку с теми же `lang/limit/offset`.
+> Файл **перезаписывается**, если вызвать ручку с теми же параметрами (включая topics).
 
 ---
 
 ## Требования
-    
+
 - Python **3.12+** (в проекте `requires-python = ">=3.12, <4.0"`)
 - Установленный **uv** (рекомендуется)
 - (Опционально) GitHub token для увеличения лимитов API:
@@ -30,13 +32,14 @@ uv sync --locked
 ```
 
 ### 2) Запустить сервис
+
 Вариант A (из `github_stars/`):
 
 ```bash
 uv run -m github_stars
 ```
 
-Вариант B (из корня репозитория):
+Вариант B (из корня репозитория, если Makefile настроен под `github_stars/`):
 
 ```bash
 uv run make run
@@ -56,7 +59,7 @@ uv run make run
 export GITHUB_TOKEN="ghp_***"
 ```
 
-После этого нужно перезапустить программу
+После этого нужно перезапустить программу.
 
 ---
 
@@ -96,6 +99,8 @@ uv run make test
 - `limit` — сколько репозиториев вернуть
 - `offset` — смещение (сколько пропустить)
 - `lang` — язык репозитория (например `Go`, `Python`, `JavaScript`)
+- `topics` — **топики (теги) GitHub**. Чтобы передать несколько, **повторяем параметр**:
+  - `...&topics=fastapi&topics=asyncio`
 - `stars_min` — минимум звёзд (по умолчанию 0)
 - `stars_max` — максимум звёзд (если не задан — без ограничения)
 - `forks_min` — минимум форков (по умолчанию 0)
@@ -105,7 +110,7 @@ uv run make test
 
 ---
 
-## 10 разных примеров curl
+## Примеры
 
 ### 1) Базовый (минимум параметров)
 ```bash
@@ -156,4 +161,39 @@ curl "http://127.0.0.1:8000/api/github-repos/export?limit=25&offset=123&lang=Pyt
 Ожидаемо вернёт ошибку (валидация диапазона):
 ```bash
 curl "http://127.0.0.1:8000/api/github-repos/export?limit=10&offset=0&lang=Python&stars_min=5000&stars_max=10"
+```
+
+### 11) Python + FastAPI проекты (`fastapi`)
+```bash
+curl "http://127.0.0.1:8000/api/github-repos/export?limit=20&offset=0&lang=Python&topics=fastapi&stars_min=100&forks_min=10"
+```
+
+### 12) Python + ML + DL (`machine-learning` и `deep-learning`), сортировка по обновлению
+```bash
+curl "http://127.0.0.1:8000/api/github-repos/export?limit=20&offset=0&lang=Python&topics=machine-learning&topics=deep-learning&stars_min=500&forks_min=50&sort=updated&order=desc"
+```
+
+### 13) Go + CLI инструменты (`cli`)
+```bash
+curl "http://127.0.0.1:8000/api/github-repos/export?limit=15&offset=0&lang=Go&topics=cli&stars_min=200&forks_min=30&sort=stars&order=desc"
+```
+
+### 14) TypeScript + React экосистема (`react`), сортировка по форкам
+```bash
+curl "http://127.0.0.1:8000/api/github-repos/export?limit=20&offset=0&lang=TypeScript&topics=react&stars_min=1000&forks_min=200&sort=forks&order=desc"
+```
+
+### 15) Rust + WebAssembly (`wasm`), узкий диапазон звёзд
+```bash
+curl "http://127.0.0.1:8000/api/github-repos/export?limit=20&offset=0&lang=Rust&topics=wasm&stars_min=200&stars_max=5000&forks_min=10"
+```
+
+### 16) Python + Docker (`docker`) + Kubernetes (`kubernetes`)
+```bash
+curl "http://127.0.0.1:8000/api/github-repos/export?limit=20&offset=0&lang=Python&topics=docker&topics=kubernetes&stars_min=200&forks_min=50"
+```
+
+### 17) Go + HTTP (`http`) + range по forks/stars + offset
+```bash
+curl "http://127.0.0.1:8000/api/github-repos/export?limit=20&offset=5&lang=Go&topics=http&stars_min=50&stars_max=5000&forks_min=10&forks_max=2000"
 ```
