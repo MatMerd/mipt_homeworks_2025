@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.get("/search")
 async def search_repositories(
-    request: SearchRepositoriesRequest,
+    request: SearchRepositoriesRequest = Depends(),
     service: RepositoryService = Depends(get_repository_service),
 ):
     try:

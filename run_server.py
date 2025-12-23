@@ -1,10 +1,6 @@
-import sys
-
-sys.path.insert(0, ".")
-
 try:
     print("Importing main module...")
-    from main import app
+    from python_2hw.main import app
 
     print("✓ Main module imported successfully")
 
