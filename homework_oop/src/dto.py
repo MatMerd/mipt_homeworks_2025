@@ -6,13 +6,19 @@ from typing import Any, Self
 
 @dataclass
 class BaseDTO:
+    """Base Data Transfer Object."""
+
     @classmethod
     @abstractmethod
-    def build(cls, row: Any) -> Self: ...
+    def build(cls, row: Any) -> Self:
+        """Build DTO from row data."""
+        ...
 
 
 @dataclass
 class GithubRepoDTO(BaseDTO):
+    """GitHub repository DTO."""
+
     name: str
     description: str
     updated_at: datetime
@@ -24,6 +30,7 @@ class GithubRepoDTO(BaseDTO):
 
     @classmethod
     def build(cls, row: list[str]) -> Self:
+        """Build GithubRepoDTO from CSV row."""
         updated_at = row[4].replace("T", " ").replace("Z", "")
         return cls(
             name=row[0],

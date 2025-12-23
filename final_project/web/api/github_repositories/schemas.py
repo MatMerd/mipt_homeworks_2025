@@ -23,7 +23,9 @@ class SearchRepositoriesParams(BaseModel):
         default=None, ge=0, description="Maximum number of forks"
     )
     license: str | None = Field(
-        default=None, min_length=1, description="License type (e.g., mit, apache-2.0, gpl-3.0)"
+        default=None,
+        min_length=1,
+        description="License type (e.g., mit, apache-2.0, gpl-3.0)",
     )
 
     @model_validator(mode="after")

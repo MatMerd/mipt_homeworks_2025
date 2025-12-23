@@ -3,11 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from fastapi import Depends
+
 from final_project.domain.repository import Repository
-from final_project.infrastructure.csv_writer import (
-    RepositoryCsvWriter,
-    get_csv_writer
-)
+from final_project.infrastructure.csv_writer import RepositoryCsvWriter, get_csv_writer
 from final_project.infrastructure.github_client import (
     GitHubSearchClient,
     get_github_client,
