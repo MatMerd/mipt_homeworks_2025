@@ -1,16 +1,25 @@
 import os
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
+from config import Settings
 from endpoints.search import router as search_router
+
+
+logging.basicConfig(level=logging.INFO)
+
+
+settings = Settings()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     os.makedirs("static", exist_ok=True)
     yield
+    # Close clients if needed, but since services are created per request, handle in dependencies
 
 
 app = FastAPI(

@@ -1,13 +1,16 @@
 from typing import Any
 
-import aiofiles
-
+from config import Settings
 from infrastructure.github_client import GitHubClient
+from repositories.exporter import CsvExporter
+from schemas import SearchRepositoriesRequest, SearchResponse
+from utils.timing import measure_time
 
 
 class RepositoryService:
-    def __init__(self):
-        self.github_client = GitHubClient()
+    def __init__(self, settings: Settings, exporter: CsvExporter = None):
+        self.github_client = GitHubClient(settings)
+        self.exporter = exporter or CsvExporter()
 
     def _build_search_query(
         self,
@@ -30,6 +33,7 @@ class RepositoryService:
             query_parts.append(f"forks:>={forks_min}")
         return " ".join(query_parts)
 
+    @measure_time()
     async def search_repositories(
         self,
         limit: int,
@@ -47,46 +51,27 @@ class RepositoryService:
         while len(all_repos) < limit:
             page = current_offset // per_page + 1
             items_needed = min(limit - len(all_repos), per_page)
-            result = await self.github_client.search_repositories(
+            result: SearchResponse = await self.github_client.search_repositories(
                 query=query, sort="stars", order="desc", per_page=items_needed, page=page
             )
-            repos = result.get("items", [])
+            repos = result.items
             if not repos:
                 break
             start_idx = current_offset % per_page
             repos_slice = repos[start_idx:]
-            all_repos.extend(repos_slice[: limit - len(all_repos)])
+            all_repos.extend([repo.model_dump() for repo in repos_slice[: limit - len(all_repos)]])
             if len(repos) < items_needed:
                 break
             current_offset += len(repos_slice)
         return all_repos
 
-    async def save_to_csv(self, repositories: list[dict[str, Any]], filename: str) -> str:
-        filepath = f"static/{filename}"
-        rows = []
-        for repo in repositories:
-            rows.append(
-                {
-                    "name": repo.get("name", ""),
-                    "owner": repo.get("owner", {}).get("login", ""),
-                    "stars": repo.get("stargazers_count", 0),
-                    "forks": repo.get("forks_count", 0),
-                    "language": repo.get("language", ""),
-                    "url": repo.get("html_url", ""),
-                    "description": repo.get("description", ""),
-                    "created_at": repo.get("created_at", ""),
-                    "updated_at": repo.get("updated_at", ""),
-                }
-            )
-        async with aiofiles.open(filepath, "w", encoding="utf-8", newline="") as f:
-            if rows:
-                fieldnames = list(rows[0].keys())
-                header = ",".join(fieldnames) + "\n"
-                await f.write(header)
-                for row in rows:
-                    line = ",".join(
-                        f'"{str(value).replace(chr(34), chr(34) + chr(34))}"'
-                        for value in row.values()
-                    )
-                    await f.write(line + "\n")
-        return filepath
+    @measure_time()
+    async def search_and_export_to_csv(self, request: SearchRepositoriesRequest) -> tuple[str, int]:
+        repositories = await self.search_repositories(**request.model_dump())
+        lang_str = request.lang if request.lang else "all"
+        filename = f"repositories_{lang_str}_{request.limit}_{request.offset}.csv"
+        filepath = await self.exporter.export_to_csv(repositories, filename)
+        return filepath, len(repositories)
+
+    async def close(self):
+        await self.github_client.close()

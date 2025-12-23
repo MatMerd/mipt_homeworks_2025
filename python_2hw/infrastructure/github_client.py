@@ -1,24 +1,25 @@
-import os
-from typing import Any
-
 import httpx
 from dotenv import load_dotenv
+
+from config import Settings
+from schemas import SearchResponse
 
 load_dotenv()
 
 
 class GitHubClient:
-    BASE_URL = "https://api.github.com"
     SEARCH_REPOS_ENDPOINT = "/search/repositories"
 
-    def __init__(self):
-        self.token = os.getenv("GITHUB_TOKEN", "")
+    def __init__(self, settings: Settings):
+        self.base_url = settings.github_base_url
+        self.token = settings.github_token
         self.headers = {
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
         }
         if self.token:
             self.headers["Authorization"] = f"Bearer {self.token}"
+        self.client = httpx.AsyncClient(timeout=30.0)
 
     async def search_repositories(
         self,
@@ -27,8 +28,8 @@ class GitHubClient:
         order: str = "desc",
         per_page: int = 30,
         page: int = 1,
-    ) -> dict[str, Any]:
-        url = f"{self.BASE_URL}{self.SEARCH_REPOS_ENDPOINT}"
+    ) -> SearchResponse:
+        url = f"{self.base_url}{self.SEARCH_REPOS_ENDPOINT}"
         params = {
             "q": query,
             "sort": sort,
@@ -36,7 +37,10 @@ class GitHubClient:
             "per_page": min(per_page, 100),
             "page": page,
         }
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(url, headers=self.headers, params=params)
-            response.raise_for_status()
-            return response.json()
+        response = await self.client.get(url, headers=self.headers, params=params)
+        response.raise_for_status()
+        data = response.json()
+        return SearchResponse(**data)
+
+    async def close(self):
+        await self.client.aclose()
